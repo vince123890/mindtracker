@@ -1,3 +1,5 @@
+import { Pagination } from "@/components/pagination";
+import { paginate } from "@/lib/paginate";
 import Link from "next/link";
 import { Card, DummyBadge, PageHeader, td, th } from "@/components/ui";
 import { can } from "@/lib/auth/roles";
@@ -13,6 +15,7 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
   const orgs = [...new Set(all.map((r) => r.organization_id))];
   const products = [...new Set(all.map((r) => r.product))];
 
+  const pg = paginate(rows, sp);
   return (
     <div>
       <PageHeader title="Production Performance" subtitle={<span className="flex items-center gap-2">Target RKAP vs realisasi per Anggota Holding · <DummyBadge /></span>} />
@@ -34,7 +37,7 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
           <table className="w-full">
             <thead><tr><th className={th}>Periode</th><th className={th}>AH</th><th className={th}>Plant</th><th className={th}>Produk</th><th className={th}>Target</th><th className={th}>Realisasi</th><th className={th}>Gap</th><th className={th}>%</th><th className={th}></th></tr></thead>
             <tbody>
-              {rows.map((r) => {
+              {pg.rows.map((r) => {
                 const gap = r.actual - r.target;
                 return (
                   <tr key={r.id}>
@@ -56,6 +59,7 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
               })}
             </tbody>
           </table>
+          <Pagination page={pg} />
         </div>
         <p className="mt-3 text-xs text-slate-500">Satuan berbeda tidak pernah dijumlahkan. Data produksi milik MCT — tidak ada form input di aplikasi ini.</p>
       </Card>

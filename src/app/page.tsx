@@ -1,3 +1,6 @@
+import type { SearchParams } from "@/lib/paginate";
+import { Pagination } from "@/components/pagination";
+import { paginate } from "@/lib/paginate";
 import Link from "next/link";
 import { MotionDashboard } from "@/components/motion-dashboard";
 import type { DashboardMotionProps } from "@/remotion/DashboardMotion";
@@ -35,7 +38,7 @@ function actionable(sc: Scorecard) {
   return { empty, gateLow, pending: sc.result.indices.index4 };
 }
 
-export default async function Dashboard() {
+export default async function Dashboard({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const user = await currentUser();
   const show = (k: string) => W[k].includes(user.role);
   const tracker = can(user.role, "project.read");
@@ -48,6 +51,9 @@ export default async function Dashboard() {
   ]);
   const overview = tracker ? await currentPhaseOverview(projects) : new Map<string, Scorecard>();
   const cards = projects.map((p) => ({ p, sc: overview.get(p.id)! }));
+  const sp = await searchParams;
+  const pgTask = paginate(cards, sp, "task");
+  const pgIdx = paginate(cards, sp, "idx");
   const orgName = new Map(orgs.map((o) => [o.id, o.name]));
 
   const [production, rcas, actionPlans] = await Promise.all([
@@ -147,10 +153,10 @@ export default async function Dashboard() {
       {show("myTasks") ? (
         <Card title="Tugas saya — fase berjalan">
           {cards.length === 0 ? <Empty>Tidak ada proyek.</Empty> : (
-            <table className="w-full">
+            <><table className="w-full">
               <thead><tr><th className={th}>Proyek</th><th className={th}>Fase</th><th className={th}>Belum diisi</th><th className={th}>Gate Control &lt; 3</th><th className={th}>Belum diputuskan (?)</th><th className={th}></th></tr></thead>
               <tbody>
-                {cards.map(({ p, sc }) => {
+                {pgTask.rows.map(({ p, sc }) => {
                   const a = actionable(sc);
                   return (
                     <tr key={p.id}>
@@ -165,6 +171,7 @@ export default async function Dashboard() {
                 })}
               </tbody>
             </table>
+            <Pagination page={pgTask} /></>
           )}
         </Card>
       ) : null}
@@ -183,7 +190,7 @@ export default async function Dashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {cards.map(({ p, sc }) => {
+                  {pgIdx.rows.map(({ p, sc }) => {
                     const i = sc.result.indices;
                     return (
                       <tr key={p.id} className="hover:bg-slate-50">
@@ -201,6 +208,7 @@ export default async function Dashboard() {
                   })}
                 </tbody>
               </table>
+              <Pagination page={pgIdx} />
             </div>
           )}
         </Card>

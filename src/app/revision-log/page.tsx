@@ -1,3 +1,5 @@
+import { Pagination } from "@/components/pagination";
+import { paginate } from "@/lib/paginate";
 import Link from "next/link";
 import { Card, Empty, PageHeader, td, th } from "@/components/ui";
 import { requirePermission } from "@/lib/auth/session";
@@ -37,6 +39,7 @@ export default async function RevisionLogPage({ searchParams }: { searchParams: 
   if (sp.type === "blocking") rows = rows.filter((r) => r.is_blocking);
   if (sp.type === "feedback") rows = rows.filter((r) => !r.is_blocking);
 
+  const pg = paginate(rows, sp);
   return (
     <div>
       <PageHeader title="Revision Log Terpusat" subtitle="Catatan PMO / Divisi MIND ID · append-only · feedback tidak mengubah status gate" />
@@ -47,13 +50,13 @@ export default async function RevisionLogPage({ searchParams }: { searchParams: 
             <option value="feedback">Feedback dalam fase</option>
             <option value="blocking">Revisi gate</option>
           </select>
-          <button className="rounded bg-slate-800 px-3 py-1 text-white">Terapkan</button>
+          <button className="rounded-lg border border-slate-300 bg-white px-3 py-1">Terapkan</button>
         </form>
         {rows.length === 0 ? <Empty>Belum ada catatan.</Empty> : (
-          <table className="w-full">
+          <><table className="w-full">
             <thead><tr><th className={th}>Waktu</th><th className={th}>Jenis</th><th className={th}>Proyek · Fase</th><th className={th}>Deliverable</th><th className={th}>Penulis</th><th className={th}>Catatan</th></tr></thead>
             <tbody>
-              {rows.map((r) => {
+              {pg.rows.map((r) => {
                 const p = byId.get(r.ppi.project_id);
                 return (
                   <tr key={r.id}>
@@ -68,6 +71,7 @@ export default async function RevisionLogPage({ searchParams }: { searchParams: 
               })}
             </tbody>
           </table>
+          <Pagination page={pg} /></>
         )}
       </Card>
     </div>

@@ -1,18 +1,22 @@
 import Link from "next/link";
+import { Pagination } from "@/components/pagination";
+import { paginate } from "@/lib/paginate";
+import type { SearchParams } from "@/lib/paginate";
 import { Card, Empty, GateBadge, PageHeader, td, th } from "@/components/ui";
 import { requirePermission } from "@/lib/auth/session";
 import { getConfig, listProjects, projectPhaseSummaries } from "@/lib/db/tracker";
 import { pct } from "@/lib/format";
 
 /** Engine 1 — PM Tracker: Scorecard Grid per fase + Riwayat Fase + Export Scorecard. */
-export default async function TrackerPage() {
+export default async function TrackerPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const user = await requirePermission("project.read");
   const [config, projects] = await Promise.all([getConfig(), listProjects(user)]);
-  const all = await Promise.all(projects.map(async (p) => ({ p, phases: await projectPhaseSummaries(p, config) })));
+  const pg = paginate(projects, await searchParams);
+  const all = await Promise.all(pg.rows.map(async (p) => ({ p, phases: await projectPhaseSummaries(p, config) })));
   return (
     <div>
       <PageHeader title="Scorecard Proyek" subtitle="Engine 1 — PM Tracker · seluruh fase tetap terbaca utuh (riwayat fase) · export scorecard per fase" />
-      {all.length === 0 ? <Empty>Tidak ada proyek.</Empty> : null}
+      {projects.length === 0 ? <Empty>Tidak ada proyek.</Empty> : null}
       <div className="space-y-4">
         {all.map(({ p, phases }) => (
           <Card key={p.id} title={<span className="normal-case">{p.code} · {p.name} · {p.project_type_1}{p.project_type_2 ? ` + ${p.project_type_2}` : ""}</span>}>
@@ -38,6 +42,7 @@ export default async function TrackerPage() {
           </Card>
         ))}
       </div>
+      <Pagination page={pg} />
     </div>
   );
 }

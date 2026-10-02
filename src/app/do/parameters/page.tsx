@@ -1,3 +1,6 @@
+import { Pagination } from "@/components/pagination";
+import { paginate } from "@/lib/paginate";
+import type { SearchParams } from "@/lib/paginate";
 import { Card, DummyBadge, PageHeader, td, th } from "@/components/ui";
 import { isMindId, requirePermission } from "@/lib/auth/session";
 import { db, must } from "@/lib/db/client";
@@ -6,13 +9,15 @@ import { num } from "@/lib/format";
 interface Row { id: number; organization_id: string; plant: string; parameter: string; unit: string; period: string; target: number; actual: number; higher_is_better: boolean }
 
 /** Key Parameter Operasi — indikator final ditetapkan bersama fungsi DO (OI-18). */
-export default async function KeyParameterPage() {
+export default async function KeyParameterPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const user = await requirePermission("do.read");
   let q = db().from("do_key_parameter").select("*").order("period", { ascending: false });
   if (!isMindId(user)) q = q.eq("organization_id", user.organizationId);
   const rows = (must(await q, "do_key_parameter") as Row[]).map((r) => ({ ...r, target: Number(r.target), actual: Number(r.actual) }));
   const latest = new Map<string, Row>();
   rows.forEach((r) => { const k = `${r.organization_id}|${r.plant}|${r.parameter}`; if (!latest.has(k)) latest.set(k, r); });
+  const latestRows = [...latest.values()];
+  const pg = paginate(latestRows, await searchParams);
   return (
     <div>
       <PageHeader title="Key Parameter Operasi" subtitle={<span className="flex items-center gap-2">Parameter vs target, deviasi · <DummyBadge /></span>} />
@@ -20,7 +25,7 @@ export default async function KeyParameterPage() {
         <table className="w-full">
           <thead><tr><th className={th}>AH</th><th className={th}>Plant</th><th className={th}>Parameter</th><th className={th}>Periode</th><th className={th}>Target</th><th className={th}>Aktual</th><th className={th}>Deviasi</th><th className={th}>Status</th></tr></thead>
           <tbody>
-            {[...latest.values()].map((r) => {
+            {pg.rows.map((r) => {
               const dev = (r.actual - r.target) / r.target;
               const ok = r.higher_is_better ? r.actual >= r.target : r.actual <= r.target;
               return (
@@ -38,6 +43,7 @@ export default async function KeyParameterPage() {
             })}
           </tbody>
         </table>
+        <Pagination page={pg} />
         <p className="mt-2 text-xs text-slate-500">Master parameter dan ambangnya akan dikelola di Master Indikator DO saat development (indikator belum ditetapkan KAK).</p>
       </Card>
     </div>

@@ -1,3 +1,6 @@
+import type { SearchParams } from "@/lib/paginate";
+import { Pagination } from "@/components/pagination";
+import { paginate } from "@/lib/paginate";
 import Link from "next/link";
 import { LevelBadge } from "@/components/risk";
 import { Card, DummyBadge, PageHeader, SourceNote, td, th } from "@/components/ui";
@@ -16,7 +19,7 @@ const SCHEDULE: Record<string, string> = { ON_TRACK: "text-emerald-700", AT_RISK
 const STAGES = ["FEL-0", "FEL-1", "FEL-2", "FEL-3", "EPC", "DO"];
 
 /** Integrated Dashboard (Landing) — ringkasan lintas fungsi BD / PMO / DO (PT-01 §1). */
-export default async function IntegratedPage() {
+export default async function IntegratedPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   await requirePermission("integrated.read");
   const user = await currentUser();
   const trackerVisible = can(user.role, "project.read") || can(user.role, "crossholding.read");
@@ -39,6 +42,7 @@ export default async function IntegratedPage() {
   const target = production.reduce((a, r) => a + r.target / r.target, 0);
   const achieved = production.reduce((a, r) => a + r.actual / r.target, 0);
 
+  const pg = paginate(codes, await searchParams);
   return (
     <div className="space-y-5">
       <PageHeader
@@ -64,7 +68,7 @@ export default async function IntegratedPage() {
               </tr>
             </thead>
             <tbody>
-              {codes.map((code) => {
+              {pg.rows.map((code) => {
                 const p = projects.find((x) => x.code === code);
                 const sc = p ? overview.get(p.id) : undefined;
                 const pr = prog.find((x) => x.project_code === code);
@@ -91,6 +95,7 @@ export default async function IntegratedPage() {
               })}
             </tbody>
           </table>
+          <Pagination page={pg} />
         </div>
         <p className="mt-2 text-xs text-slate-500">Kolom: Kematangan ← MIND Tracker (internal) · Progres fisik & Jadwal ← MIND Project · Risiko ← PRISMA · Dokumen / FID ← MIND Gate. Ketiga sumber eksternal masih data dummy; integrasi read-only dikerjakan saat development.</p>
       </Card>

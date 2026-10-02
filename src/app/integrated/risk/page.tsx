@@ -1,3 +1,5 @@
+import { Pagination } from "@/components/pagination";
+import { paginate } from "@/lib/paginate";
 import Link from "next/link";
 import { HeatmapLegend, LevelBadge, PrismaSetupNotice, RiskDetailTable, RiskHeatmap, RiskHistoryChart, TopRiskList } from "@/components/risk";
 import { btnGhost, Card, SourceNote, DummyBadge, Empty, input, PageHeader, td, th } from "@/components/ui";
@@ -44,6 +46,8 @@ export default async function PrismaRiskPage({ searchParams }: { searchParams: P
     impact: rs[0].impact,
     title: rs.map((r) => `${r.project_code} ${r.risk_id} — ${r.title}`).join("\n"),
   }));
+  const pgRisk = paginate([...risks].sort((a, b) => severity(b) - severity(a)), sp, "risk");
+  const pgAgg = paginate(codes, sp, "agg");
   const top = [...open].sort((a, b) => severity(b) - severity(a)).slice(0, 10);
   const histRows = sumHistory(history.filter((h) => !sp.project || h.project_code === sp.project));
 
@@ -119,7 +123,7 @@ export default async function PrismaRiskPage({ searchParams }: { searchParams: P
                     <tr><th className={th}>Proyek</th><th className={th}>Rating</th><th className={th}>Open</th><th className={th}>Mitigated</th><th className={th}>Progres mitigasi rata-rata</th><th className={th}>Top risk</th></tr>
                   </thead>
                   <tbody>
-                    {codes.map((code) => {
+                    {pgAgg.rows.map((code) => {
                       const rs = all.filter((r) => r.project_code === code);
                       const o = rs.filter((r) => r.status === "OPEN");
                       const avg = o.length ? Math.round(o.reduce((a, r) => a + r.mitigation_progress, 0) / o.length) : null;
@@ -148,12 +152,14 @@ export default async function PrismaRiskPage({ searchParams }: { searchParams: P
                     })}
                   </tbody>
                 </table>
+                <Pagination page={pgAgg} />
               </div>
             </Card>
           ) : null}
 
           <Card title="Detail Risk" source="prisma.detail">
-            <RiskDetailTable risks={[...risks].sort((a, b) => severity(b) - severity(a))} showProject={!sp.project} />
+            <RiskDetailTable risks={pgRisk.rows} showProject={!sp.project} />
+            <Pagination page={pgRisk} />
           </Card>
         </>
       )}

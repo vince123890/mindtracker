@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { Card, Empty, GateBadge, LinkButton, PageHeader, td, th } from "@/components/ui";
+import { Pagination } from "@/components/pagination";
+import { paginate } from "@/lib/paginate";
+import { btnGhost, Card, Empty, GateBadge, LinkButton, PageHeader, td, th } from "@/components/ui";
 import { can } from "@/lib/auth/roles";
 import { isMindId, requirePermission } from "@/lib/auth/session";
 import { currentPhaseOverview, getConfig, getOrganizations, getProjectTypes, listProjects } from "@/lib/db/tracker";
@@ -22,6 +24,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
   const typeName = new Map(types.map((t) => [t.code, t.name]));
   const filtered = projects.filter((p) => !sp.gate || overview.get(p.id)?.instance.gate_status === sp.gate);
 
+  const pg = paginate(filtered, sp);
   return (
     <div>
       <PageHeader
@@ -52,7 +55,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
             <option value="WAITING_APPROVAL">Menunggu Persetujuan</option>
             <option value="APPROVED">Disetujui</option>
           </select>
-          <button className="rounded bg-slate-800 px-3 py-1 text-white">Terapkan</button>
+          <button className={btnGhost}>Terapkan</button>
         </form>
         {filtered.length === 0 ? <Empty>Tidak ada proyek yang cocok dengan filter.</Empty> : (
           <div className="overflow-x-auto">
@@ -70,7 +73,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((p) => {
+                {pg.rows.map((p) => {
                   const sc = overview.get(p.id)!;
                   const i = sc.result.indices;
                   return (
@@ -94,6 +97,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
                 })}
               </tbody>
             </table>
+            <Pagination page={pg} />
           </div>
         )}
       </Card>

@@ -1,3 +1,6 @@
+import { Pagination } from "@/components/pagination";
+import { paginate } from "@/lib/paginate";
+import type { SearchParams } from "@/lib/paginate";
 import Link from "next/link";
 import { Card, Empty, PageHeader, td, th } from "@/components/ui";
 import { requirePermission } from "@/lib/auth/session";
@@ -6,7 +9,7 @@ import { listProjects, listTransitions } from "@/lib/db/tracker";
 import { dateTime, GATE_LABEL, pct } from "@/lib/format";
 
 /** Riwayat Transisi Gate — dicatat bersama Index saat keputusan diambil. */
-export default async function GateHistoryPage() {
+export default async function GateHistoryPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const user = await requirePermission("project.read");
   const projects = await listProjects(user);
   const instances = projects.length
@@ -18,15 +21,16 @@ export default async function GateHistoryPage() {
   const inst = new Map(instances.map((i) => [i.id, i]));
   const proj = new Map(projects.map((p) => [p.id, p]));
   const transitions = await listTransitions(instances.map((i) => i.id));
+  const pg = paginate(transitions, await searchParams);
   return (
     <div>
       <PageHeader title="Riwayat Transisi Gate" subtitle="Seluruh keputusan phase gate · append-only" />
       <Card>
         {transitions.length === 0 ? <Empty>Belum ada transisi.</Empty> : (
-          <table className="w-full">
+          <><table className="w-full">
             <thead><tr><th className={th}>Waktu</th><th className={th}>Proyek · Fase</th><th className={th}>Transisi</th><th className={th}>Oleh</th><th className={th}>Index saat keputusan</th><th className={th}>Catatan</th></tr></thead>
             <tbody>
-              {transitions.map((t) => {
+              {pg.rows.map((t) => {
                 const i = inst.get(t.phase_instance_id)!;
                 const p = proj.get(i.project_id)!;
                 return (
@@ -42,6 +46,7 @@ export default async function GateHistoryPage() {
               })}
             </tbody>
           </table>
+          <Pagination page={pg} /></>
         )}
       </Card>
     </div>

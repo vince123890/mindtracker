@@ -1,3 +1,6 @@
+import type { SearchParams } from "@/lib/paginate";
+import { Pagination } from "@/components/pagination";
+import { paginate } from "@/lib/paginate";
 import { ActionForm } from "@/components/action-form";
 import { btn, Card, input, PageHeader, td, th } from "@/components/ui";
 import { can } from "@/lib/auth/roles";
@@ -7,13 +10,14 @@ import { getConfig } from "@/lib/db/tracker";
 import { dateTime } from "@/lib/format";
 import { newScoringConfig } from "../actions";
 
-export default async function ScoringConfigPage() {
+export default async function ScoringConfigPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const user = await requirePermission("master.read");
   const [config, history] = await Promise.all([
     getConfig(),
     db().from("scoring_config").select("*").order("version", { ascending: false }),
   ]);
   const rows = must(history, "scoring_config") as Record<string, string | number | boolean | null>[];
+  const pg = paginate(rows, await searchParams);
   return (
     <div className="max-w-4xl space-y-4">
       <PageHeader title="Scoring Config" subtitle="Nilai default dari tracker v1.4 · perubahan selalu membuat versi baru (berlaku prospektif)" />
@@ -38,7 +42,7 @@ export default async function ScoringConfigPage() {
         <table className="w-full">
           <thead><tr><th className={th}>Versi</th><th className={th}>Start</th><th className={th}>Pass</th><th className={th}>Ambang Index 1</th><th className={th}>Gate Control wajib</th><th className={th}>NA</th><th className={th}>Dibuat</th></tr></thead>
           <tbody>
-            {rows.map((r) => (
+            {pg.rows.map((r) => (
               <tr key={String(r.version)}>
                 <td className={td}>{String(r.version)}{r.version === config.version ? " (aktif)" : ""}</td>
                 <td className={td}>{String(r.start_threshold)}</td>
@@ -51,6 +55,7 @@ export default async function ScoringConfigPage() {
             ))}
           </tbody>
         </table>
+        <Pagination page={pg} />
       </Card>
     </div>
   );

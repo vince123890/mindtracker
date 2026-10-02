@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { Pagination } from "@/components/pagination";
+import { paginate } from "@/lib/paginate";
+import type { SearchParams } from "@/lib/paginate";
 import { Card, Empty, PageHeader, td, th } from "@/components/ui";
 import { requirePermission } from "@/lib/auth/session";
 import { db, must } from "@/lib/db/client";
@@ -10,7 +13,7 @@ function daysSince(iso: string | null): number {
   return iso ? Math.floor((Date.now() - new Date(iso).getTime()) / 86400000) : 0;
 }
 
-export default async function GatesPage() {
+export default async function GatesPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const user = await requirePermission("gate.approve");
   const config = await getConfig();
   const waiting = must(
@@ -21,12 +24,13 @@ export default async function GatesPage() {
       .order("submitted_at"),
     "gates",
   ) as unknown as (PhaseInstance & { project: Project; submitter: { name: string } | null })[];
-  const cards = await Promise.all(waiting.map(async (w) => ({ w, sc: await buildScorecard(w.project, w, config) })));
+  const pg = paginate(waiting, await searchParams);
+  const cards = await Promise.all(pg.rows.map(async (w) => ({ w, sc: await buildScorecard(w.project, w, config) })));
 
   return (
     <div className="space-y-4">
       <PageHeader title="Persetujuan Gate" subtitle="Hanya PMO MIND ID · pengaju tidak dapat menyetujui pengajuannya sendiri" />
-      {cards.length === 0 ? <Empty>Tidak ada pengajuan gate yang menunggu.</Empty> : null}
+      {waiting.length === 0 ? <Empty>Tidak ada pengajuan gate yang menunggu.</Empty> : null}
       {cards.map(({ w, sc }) => {
         const days = daysSince(w.submitted_at);
         return (
@@ -51,6 +55,7 @@ export default async function GatesPage() {
           </Card>
         );
       })}
+      <Pagination page={pg} />
     </div>
   );
 }

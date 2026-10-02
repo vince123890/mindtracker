@@ -1,3 +1,6 @@
+import type { SearchParams } from "@/lib/paginate";
+import { Pagination } from "@/components/pagination";
+import { paginate } from "@/lib/paginate";
 import { ActionForm } from "@/components/action-form";
 import { LineChart } from "@/components/line-chart";
 import { btn, Card, Empty, input, PageHeader, td, th } from "@/components/ui";
@@ -10,7 +13,7 @@ import { buildSnapshots } from "./actions";
 
 const COLORS = ["#4f46e5", "#059669", "#d97706", "#db2777", "#0891b2"];
 
-export default async function SnapshotsPage() {
+export default async function SnapshotsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const user = await requirePermission("project.read");
   const [config, projects] = await Promise.all([getConfig(), listProjects(user)]);
   const snaps = await listSnapshots(projects);
@@ -27,6 +30,8 @@ export default async function SnapshotsPage() {
     };
   });
 
+  const snapsDesc = [...snaps].reverse();
+  const pg = paginate(snapsDesc, await searchParams);
   return (
     <div className="space-y-4">
       <PageHeader title="Snapshot & Progress Curve" subtitle="Snapshot bulanan bersifat immutable · kurva Index 1 (FDMI) sepanjang fase — mendeteksi progres yang menumpuk di akhir fase" />
@@ -53,7 +58,7 @@ export default async function SnapshotsPage() {
         <table className="w-full">
           <thead><tr><th className={th}>Periode</th><th className={th}>Proyek · Fase</th><th className={th}>FDMI</th><th className={th}>FGDI</th><th className={th}>FDCI</th><th className={th}>?</th><th className={th}>Config</th><th className={th}>Dibentuk</th></tr></thead>
           <tbody>
-            {[...snaps].reverse().map((s) => (
+            {pg.rows.map((s) => (
               <tr key={s.id}>
                 <td className={td}>{s.label === "PHASE_CLOSE" ? "Penutup fase" : s.label}</td>
                 <td className={td}>{proj.get(s.ppi.project_id)?.code} · {s.ppi.phase_code}</td>
@@ -67,6 +72,7 @@ export default async function SnapshotsPage() {
             ))}
           </tbody>
         </table>
+        <Pagination page={pg} />
       </Card>
     </div>
   );

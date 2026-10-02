@@ -1,3 +1,5 @@
+import { Pagination } from "@/components/pagination";
+import { paginate } from "@/lib/paginate";
 import Link from "next/link";
 import { Card, Empty, LinkButton, PageHeader, td, th } from "@/components/ui";
 import { can } from "@/lib/auth/roles";
@@ -17,6 +19,7 @@ export default async function RcaListPage({ searchParams }: { searchParams: Prom
   const sp = await searchParams;
   const [all, aps] = await Promise.all([listRca(user), listActionPlans(user)]);
   const rcas = all.filter((r) => (!sp.status || r.status === sp.status) && (!sp.q || r.number.toLowerCase().includes(sp.q.toLowerCase()) || r.plant.toLowerCase().includes(sp.q.toLowerCase())));
+  const pg = paginate(rcas, sp);
   return (
     <div>
       <PageHeader
@@ -31,13 +34,13 @@ export default async function RcaListPage({ searchParams }: { searchParams: Prom
             <option value="">Semua status</option>
             {Object.entries(RCA_STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
-          <button className="rounded bg-slate-800 px-3 py-1 text-white">Terapkan</button>
+          <button className="rounded-lg border border-slate-300 bg-white px-3 py-1">Terapkan</button>
         </form>
         {rcas.length === 0 ? <Empty>Belum ada RCA.</Empty> : (
-          <table className="w-full">
+          <><table className="w-full">
             <thead><tr><th className={th}>No. RCA</th>{isMindId(user) ? <th className={th}>AH</th> : null}<th className={th}>Plant / Produk</th><th className={th}>Periode</th><th className={th}>Gap</th><th className={th}>Kategori</th><th className={th}>Status</th><th className={th}>Action plan</th><th className={th}>Dibuat</th></tr></thead>
             <tbody>
-              {rcas.map((r) => {
+              {pg.rows.map((r) => {
                 const mine = aps.filter((a) => a.rca_id === r.id);
                 const done = mine.filter((a) => a.status === "VERIFIED").length;
                 return (
@@ -56,6 +59,7 @@ export default async function RcaListPage({ searchParams }: { searchParams: Prom
               })}
             </tbody>
           </table>
+          <Pagination page={pg} /></>
         )}
       </Card>
     </div>

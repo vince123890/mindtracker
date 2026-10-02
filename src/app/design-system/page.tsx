@@ -1,5 +1,6 @@
 import { HeatmapLegend, LevelBadge, RiskDetailTable, RiskHeatmap, RiskHistoryChart, TopRiskList } from "@/components/risk";
 import { Icon } from "@/components/icons";
+import { Pagination } from "@/components/pagination";
 import { btn, btnDanger, btnGhost, Card, DummyBadge, GateBadge, input, PageHeader, ReqBadge, SourceNote, Tabs, td, th } from "@/components/ui";
 import type { PrismaRisk } from "@/lib/db/prisma";
 import type { RiskLevel } from "@/lib/risk/matrix";
@@ -154,6 +155,11 @@ export default function DesignSystemPage() {
             <tr><td className={td}>RSK-002</td><td className={td}>Financial</td><td className={td}>Padding sel 12px, teks 14px.</td></tr>
           </tbody>
         </table>
+        <Pagination page={{ page: 2, size: 10, total: 57, prefix: "demo" }} />
+        <p className="text-xs text-slate-500">
+          Paginasi wajib di setiap tabel daftar: default 10 baris, pilihan 10/20/50/100, dikerjakan di server lewat parameter URL
+          (<code>page</code>/<code>size</code>, atau <code>&lt;prefix&gt;_page</code> bila satu halaman punya beberapa tabel).
+        </p>
       </Section>
 
       <div className="text-lg font-semibold text-slate-900">Pola: Risk PRISMA (data contoh)</div>

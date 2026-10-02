@@ -1,3 +1,6 @@
+import { Pagination } from "@/components/pagination";
+import { paginate } from "@/lib/paginate";
+import type { SearchParams } from "@/lib/paginate";
 import { Card, PageHeader, btnDanger, td, th } from "@/components/ui";
 import { can } from "@/lib/auth/roles";
 import { isMindId, requirePermission } from "@/lib/auth/session";
@@ -8,7 +11,7 @@ import { deleteActionPlan, deleteRca } from "../../actions";
 import { NewActionPlanForm, ProgressForm, ReviewRcaForm, SubmitRcaForm, VerifyForm } from "../../action-plan-controls";
 import { RcaForm } from "../rca-form";
 
-export default async function RcaDetail({ params }: { params: Promise<{ id: string }> }) {
+export default async function RcaDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<SearchParams> }) {
   const user = await requirePermission("do.read");
   const { id } = await params;
   const rca = await getRca(id, user);
@@ -17,6 +20,7 @@ export default async function RcaDetail({ params }: { params: Promise<{ id: stri
   const canWrite = can(user.role, "do.rca.write") && (rca.created_by === user.id || isMindId(user));
   const canApWrite = can(user.role, "do.actionplan.write");
 
+  const pg = paginate(aps, await searchParams);
   return (
     <div className="space-y-5">
       <PageHeader title={rca.number} subtitle={`${rca.organization_id} · ${rca.plant} · ${rca.product} · ${rca.period.slice(0, 7)} · Status: ${RCA_STATUS_LABEL[rca.status]}`} />
@@ -67,7 +71,7 @@ export default async function RcaDetail({ params }: { params: Promise<{ id: stri
         <table className="mb-4 w-full">
           <thead><tr><th className={th}>Tindakan</th><th className={th}>PIC</th><th className={th}>Target</th><th className={th}>Progres</th><th className={th}>Status</th><th className={th}>Aksi</th></tr></thead>
           <tbody>
-            {aps.map((a) => (
+            {pg.rows.map((a) => (
               <tr key={a.id}>
                 <td className={td}>{a.action}</td>
                 <td className={td}>{a.pic}</td>
@@ -85,6 +89,7 @@ export default async function RcaDetail({ params }: { params: Promise<{ id: stri
             ))}
           </tbody>
         </table>
+        <Pagination page={pg} />
         {canApWrite ? <NewActionPlanForm rcaId={rca.id} /> : null}
       </Card>
     </div>

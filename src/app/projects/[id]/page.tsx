@@ -1,3 +1,6 @@
+import { Pagination } from "@/components/pagination";
+import { paginate } from "@/lib/paginate";
+import type { SearchParams } from "@/lib/paginate";
 import Link from "next/link";
 import { LineChart } from "@/components/line-chart";
 import { listSnapshots } from "@/lib/db/snapshots";
@@ -43,6 +46,7 @@ export default async function ProjectDetail({
   const [config, phases, orgs, types] = await Promise.all([getConfig(), projectPhaseSummaries(project), getOrganizations(), getProjectTypes()]);
   const [transitions, snaps] = await Promise.all([listTransitions(phases.map((p) => p.instance.id)), listSnapshots([project])]);
   const curve = snaps.filter((x) => x.label !== "PHASE_CLOSE" && x.ppi.phase_code === project.current_phase);
+  const pgTr = paginate(transitions, sp, "gate");
   const org = orgs.find((o) => o.id === project.organization_id);
   const typeName = new Map(types.map((t) => [t.code, t.name]));
   const canComment = can(user.role, "phase.comment");
@@ -78,8 +82,8 @@ export default async function ProjectDetail({
       />
       <Tabs items={TABS.map((t) => ({ href: `/projects/${project.id}?tab=${t.id}`, label: t.label, icon: t.icon, active: t.id === tab }))} />
 
-      {tab === "risk" ? <RiskTab code={project.code} /> : null}
-      {tab === "activity" ? <ActivityTab projectId={project.id} instanceIds={phases.map((p) => p.instance.id)} /> : null}
+      {tab === "risk" ? <RiskTab code={project.code} sp={sp} /> : null}
+      {tab === "activity" ? <ActivityTab projectId={project.id} instanceIds={phases.map((p) => p.instance.id)} sp={sp} /> : null}
       {tab === "highlight" ? (
       <div className="space-y-6">
       <Card title="Index per fase — replika sheet Dashboard tracker v1.4">
@@ -199,10 +203,10 @@ export default async function ProjectDetail({
       <div className="space-y-6">
       <Card title="Riwayat keputusan gate">
         {transitions.length === 0 ? <p className="text-sm text-slate-500">Belum ada transisi.</p> : (
-          <table className="w-full">
+          <><table className="w-full">
             <thead><tr><th className={th}>Waktu</th><th className={th}>Fase</th><th className={th}>Transisi</th><th className={th}>Oleh</th><th className={th}>Index saat keputusan</th><th className={th}>Catatan</th></tr></thead>
             <tbody>
-              {transitions.map((t) => (
+              {pgTr.rows.map((t) => (
                 <tr key={t.id}>
                   <td className={td}>{dateTime(t.created_at)}</td>
                   <td className={td}>{phases.find((p) => p.instance.id === t.phase_instance_id)?.instance.phase_code}</td>
@@ -214,6 +218,7 @@ export default async function ProjectDetail({
               ))}
             </tbody>
           </table>
+          <Pagination page={pgTr} /></>
         )}
       </Card>
 
@@ -231,7 +236,7 @@ const TABS = [
 ];
 
 /** Tab Risk — tampilan Risk PRISMA per proyek (data dummy pengganti integrasi I-2). */
-async function RiskTab({ code }: { code: string }) {
+async function RiskTab({ code, sp }: { code: string; sp: SearchParams }) {
   const user = await currentUser();
   if (!(await prismaAvailable())) return <PrismaSetupNotice />;
   const [risks, history] = await Promise.all([listRisks(user, code), listRiskHistory(user, code)]);
@@ -239,6 +244,7 @@ async function RiskTab({ code }: { code: string }) {
   const top = risks.filter((r) => r.top_rank !== null).sort((a, b) => a.top_rank! - b.top_rank!);
   const open = risks.filter((r) => r.status === "OPEN");
   const level = aggregateLevel(risks);
+  const pgRisk = paginate(risks, sp, "risk");
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
@@ -261,7 +267,8 @@ async function RiskTab({ code }: { code: string }) {
         </Card>
       </div>
       <Card title="Detail Risk" source="prisma.detail">
-        <RiskDetailTable risks={risks} />
+        <RiskDetailTable risks={pgRisk.rows} />
+        <Pagination page={pgRisk} />
       </Card>
     </div>
   );
@@ -270,20 +277,21 @@ async function RiskTab({ code }: { code: string }) {
 interface AuditRow { id: number; actor_id: string; actor_role: string; entity_type: string; entity_id: string; action: string; reason: string | null; created_at: string }
 
 /** Tab Activity — jejak audit proyek dan fase-fasenya. */
-async function ActivityTab({ projectId, instanceIds }: { projectId: string; instanceIds: string[] }) {
+async function ActivityTab({ projectId, instanceIds, sp }: { projectId: string; instanceIds: string[]; sp: SearchParams }) {
   const keys = [projectId, ...instanceIds];
   const rows = must(
     await db().from("audit_log_entry").select("id, actor_id, actor_role, entity_type, entity_id, action, reason, created_at").order("created_at", { ascending: false }).limit(500),
     "audit",
   ) as AuditRow[];
-  const mine = rows.filter((e) => keys.includes(e.entity_id) || keys.includes(e.entity_id.split("/")[0])).slice(0, 100);
+  const mine = rows.filter((e) => keys.includes(e.entity_id) || keys.includes(e.entity_id.split("/")[0])).slice(0, 1000);
+  const pgAct = paginate(mine, sp, "act");
   return (
     <Card title="Activity">
       {mine.length === 0 ? <Empty>Belum ada aktivitas tercatat untuk proyek ini.</Empty> : (
-        <table className="w-full">
+        <><table className="w-full">
           <thead><tr><th className={th}>Waktu</th><th className={th}>User · Role</th><th className={th}>Entitas</th><th className={th}>Aksi</th><th className={th}>Alasan</th></tr></thead>
           <tbody>
-            {mine.map((e) => (
+            {pgAct.rows.map((e) => (
               <tr key={e.id}>
                 <td className={`${td} whitespace-nowrap`}>{dateTime(e.created_at)}</td>
                 <td className={td}>{e.actor_id}<div className="text-xs text-slate-500">{e.actor_role}</div></td>
@@ -294,6 +302,7 @@ async function ActivityTab({ projectId, instanceIds }: { projectId: string; inst
             ))}
           </tbody>
         </table>
+        <Pagination page={pgAct} /></>
       )}
     </Card>
   );

@@ -1,3 +1,6 @@
+import { Pagination } from "@/components/pagination";
+import { paginate } from "@/lib/paginate";
+import type { SearchParams } from "@/lib/paginate";
 import { Card, PageHeader, td, th } from "@/components/ui";
 import { isMindId, requirePermission } from "@/lib/auth/session";
 import { db, must } from "@/lib/db/client";
@@ -16,9 +19,9 @@ interface Entry {
   created_at: string;
 }
 
-export default async function AuditPage() {
+export default async function AuditPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const user = await requirePermission("audit.read");
-  let entries = must(await db().from("audit_log_entry").select("*").order("created_at", { ascending: false }).limit(300), "audit") as Entry[];
+  let entries = must(await db().from("audit_log_entry").select("*").order("created_at", { ascending: false }).limit(2000), "audit") as Entry[];
   if (!isMindId(user)) {
     // PMO AH: hanya entri milik proyek organisasinya
     const projects = await listProjects(user);
@@ -29,6 +32,7 @@ export default async function AuditPage() {
     const keys = new Set([...projects.map((p) => p.id), ...instances.map((i) => i.id)]);
     entries = entries.filter((e) => keys.has(e.entity_id) || keys.has(e.entity_id.split("/")[0]));
   }
+  const pg = paginate(entries, await searchParams);
   return (
     <div>
       <PageHeader title="Audit Log" subtitle="Append-only — tidak dapat diubah atau dihapus (ditegakkan trigger basis data)" />
@@ -36,7 +40,7 @@ export default async function AuditPage() {
         <table className="w-full">
           <thead><tr><th className={th}>Waktu</th><th className={th}>User · Role</th><th className={th}>Entitas</th><th className={th}>Aksi</th><th className={th}>Perubahan</th><th className={th}>Alasan</th></tr></thead>
           <tbody>
-            {entries.map((e) => (
+            {pg.rows.map((e) => (
               <tr key={e.id}>
                 <td className={`${td} whitespace-nowrap`}>{dateTime(e.created_at)}</td>
                 <td className={td}>{e.actor_id}<div className="text-xs text-slate-500">{e.actor_role}</div></td>
@@ -48,6 +52,7 @@ export default async function AuditPage() {
             ))}
           </tbody>
         </table>
+        <Pagination page={pg} />
         {entries.length === 0 ? <p className="text-sm text-slate-500">Belum ada aktivitas.</p> : null}
       </Card>
     </div>

@@ -1,3 +1,6 @@
+import type { SearchParams } from "@/lib/paginate";
+import { Pagination } from "@/components/pagination";
+import { paginate } from "@/lib/paginate";
 import Link from "next/link";
 import { ActionForm } from "@/components/action-form";
 import { btn, Card, Empty, input, PageHeader, td, th } from "@/components/ui";
@@ -8,20 +11,21 @@ import { listProjects } from "@/lib/db/tracker";
 import { date } from "@/lib/format";
 import { createAssessment } from "./actions";
 
-export default async function RtoListPage() {
+export default async function RtoListPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const user = await requirePermission("rto.read");
   const projects = await listProjects(user);
   const assessments = await listAssessments(projects);
   const proj = new Map(projects.map((p) => [p.id, p]));
+  const pg = paginate(assessments, await searchParams);
   return (
     <div className="space-y-4">
       <PageHeader title="RTO Assessment" subtitle="Engine 2 — Ready to Operate · 6 Operational Readiness Pillars · sesi penilaian bertanggal dipimpin OR Team Lead" />
       <Card title="Daftar assessment">
         {assessments.length === 0 ? <Empty>Belum ada assessment.</Empty> : (
-          <table className="w-full">
+          <><table className="w-full">
             <thead><tr><th className={th}>Tanggal</th><th className={th}>Proyek</th><th className={th}>Titik penilaian</th><th className={th}>Dipimpin</th><th className={th}>Status</th></tr></thead>
             <tbody>
-              {assessments.map((a) => (
+              {pg.rows.map((a) => (
                 <tr key={a.id}>
                   <td className={td}><Link className="text-indigo-600 underline" href={`/rto/${a.id}`}>{date(a.assessment_date)}</Link></td>
                   <td className={td}>{proj.get(a.project_id)?.code} · {proj.get(a.project_id)?.name}</td>
@@ -32,6 +36,7 @@ export default async function RtoListPage() {
               ))}
             </tbody>
           </table>
+          <Pagination page={pg} /></>
         )}
       </Card>
       {can(user.role, "rto.write") && projects.length ? (

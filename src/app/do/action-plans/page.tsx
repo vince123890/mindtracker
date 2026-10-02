@@ -1,3 +1,5 @@
+import { Pagination } from "@/components/pagination";
+import { paginate } from "@/lib/paginate";
 import Link from "next/link";
 import { Card, Empty, PageHeader, td, th } from "@/components/ui";
 import { can } from "@/lib/auth/roles";
@@ -11,6 +13,7 @@ export default async function ActionPlansPage({ searchParams }: { searchParams: 
   const sp = await searchParams;
   const all = await listActionPlans(user);
   const aps = all.filter((a) => (!sp.status || a.status === sp.status) && (sp.overdue !== "1" || isOverdue(a)));
+  const pg = paginate(aps, sp);
   return (
     <div>
       <PageHeader title="Action Plan Monitoring" subtitle="Tindak lanjut RCA · progres oleh PIC, verifikasi oleh Divisi DO MIND ID" />
@@ -21,13 +24,13 @@ export default async function ActionPlansPage({ searchParams }: { searchParams: 
             {Object.entries(AP_STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
           <label className="flex items-center gap-1"><input type="checkbox" name="overdue" value="1" defaultChecked={sp.overdue === "1"} /> hanya terlambat</label>
-          <button className="rounded bg-slate-800 px-3 py-1 text-white">Terapkan</button>
+          <button className="rounded-lg border border-slate-300 bg-white px-3 py-1">Terapkan</button>
         </form>
         {aps.length === 0 ? <Empty>Tidak ada action plan.</Empty> : (
-          <table className="w-full">
+          <><table className="w-full">
             <thead><tr><th className={th}>Tindakan</th><th className={th}>RCA</th>{isMindId(user) ? <th className={th}>AH</th> : null}<th className={th}>PIC</th><th className={th}>Target</th><th className={th}>Progres</th><th className={th}>Status</th><th className={th}>Aksi</th></tr></thead>
             <tbody>
-              {aps.map((a) => (
+              {pg.rows.map((a) => (
                 <tr key={a.id}>
                   <td className={td}>{a.action}</td>
                   <td className={td}><Link className="text-indigo-600 underline" href={`/do/rca/${a.rca_id}`}>{a.rca.number}</Link></td>
@@ -47,6 +50,7 @@ export default async function ActionPlansPage({ searchParams }: { searchParams: 
               ))}
             </tbody>
           </table>
+          <Pagination page={pg} /></>
         )}
       </Card>
     </div>

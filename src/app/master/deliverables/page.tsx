@@ -1,3 +1,5 @@
+import { Pagination } from "@/components/pagination";
+import { paginate } from "@/lib/paginate";
 import { Card, PageHeader, td, th } from "@/components/ui";
 import { can } from "@/lib/auth/roles";
 import { requirePermission } from "@/lib/auth/session";
@@ -18,6 +20,7 @@ export default async function DeliverablesPage({ searchParams }: { searchParams:
     return { code: t.code, ...c };
   });
 
+  const pg = paginate(rows, sp);
   return (
     <div>
       <PageHeader title="Deliverable & Requirement Matrix" subtitle={`Seed dari Dummy Tracker v1.4 · ${all.length} deliverable pada ${phase} · nama deliverable masih disamarkan seperti berkas sumber`} />
@@ -44,7 +47,7 @@ export default async function DeliverablesPage({ searchParams }: { searchParams:
               </tr>
             </thead>
             <tbody>
-              {rows.map((d) => (
+              {pg.rows.map((d) => (
                 <tr key={d.id}>
                   <td className={`${td} text-xs text-slate-500`}>{chName.get(d.chapter_no)}</td>
                   <td className={`${td} font-mono text-xs`}>{d.code}</td>
@@ -58,6 +61,7 @@ export default async function DeliverablesPage({ searchParams }: { searchParams:
               ))}
             </tbody>
           </table>
+          <Pagination page={pg} />
         </div>
         <p className="mt-3 text-xs text-slate-500">Impor master dari Excel melalui UI dikerjakan saat development; prototype memakai <code>scripts/generate_seed.py</code>.</p>
       </Card>

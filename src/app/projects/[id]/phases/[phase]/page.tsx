@@ -1,3 +1,5 @@
+import { Pagination } from "@/components/pagination";
+import { paginate } from "@/lib/paginate";
 import Link from "next/link";
 import { Card, GateBadge, IndexCards, PageHeader, th } from "@/components/ui";
 import { can } from "@/lib/auth/roles";
@@ -76,6 +78,7 @@ export default async function ScorecardPage({
   const dimName = new Map(sc.dimensions.map((d) => [d.id, d.name]));
   const generalFeedback = feedback.filter((f) => f.deliverable_id === null || f.is_blocking);
 
+  const pg = paginate(filtered, sp);
   return (
     <div className="space-y-5">
       <PageHeader
@@ -155,10 +158,11 @@ export default async function ScorecardPage({
                 <th className={th}>Weighted</th><th className={th}></th>
               </tr>
             </thead>
-            {filtered.map((r) => (
+            {pg.rows.map((r) => (
               <ScorecardRow key={r.deliverableId} row={r} projectId={project.id} phase={instance.phase_code} perm={perm} />
             ))}
           </table>
+          <Pagination page={pg} />
         </div>
       </Card>
     </div>
