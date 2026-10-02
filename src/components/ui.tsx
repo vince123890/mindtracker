@@ -238,5 +238,5 @@ export const btnGhost = "inline-flex items-center gap-2 rounded-lg border border
 export const btnDanger = "inline-flex items-center gap-2 rounded-lg bg-brand-red px-4 py-2 text-sm font-medium text-white hover:bg-brand-red-dark";
 export const input = "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-brand-navy focus:ring-2 focus:ring-indigo-100 focus:outline-none";
 /** Header tabel navy (pola tabel "Detail Risk"). */
-export const th = "bg-brand-navy px-3 py-3 text-left text-sm font-semibold text-white first:rounded-tl-lg last:rounded-tr-lg";
+export const th = "bg-brand-navy px-3 py-3 text-center text-sm font-semibold text-white first:rounded-tl-lg last:rounded-tr-lg";
 export const td = "border-b border-line px-3 py-3 align-top text-sm";

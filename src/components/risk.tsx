@@ -176,8 +176,8 @@ export function TopRiskList({ risks, showProject = false }: { risks: PrismaRisk[
     <table className="w-full">
       <thead>
         <tr className="bg-slate-50">
-          <th className="w-14 px-3 py-3 text-left text-sm font-semibold text-slate-900">No</th>
-          <th className="px-3 py-3 text-left text-sm font-semibold text-slate-900">Risk</th>
+          <th className="w-14 px-3 py-3 text-center text-sm font-semibold text-slate-900">No</th>
+          <th className="px-3 py-3 text-center text-sm font-semibold text-slate-900">Risk</th>
         </tr>
       </thead>
       <tbody>
