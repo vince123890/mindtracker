@@ -31,6 +31,19 @@ export interface PrismaHistory {
   mitigated_count: number;
 }
 
+/** Tabel belum dibuat (migration 20261002000000_prisma_risk.sql belum dijalankan). */
+function isMissingTable(error: { code?: string; message: string } | null): boolean {
+  return !!error && (error.code === "PGRST205" || error.code === "42P01" || /could not find the table|does not exist/i.test(error.message));
+}
+
+/** false bila tabel PRISMA belum ada — halaman menampilkan petunjuk alih-alih error 500. */
+export async function prismaAvailable(): Promise<boolean> {
+  const { error } = await db().from("ext_prisma_risk").select("risk_id", { head: true, count: "exact" }).limit(1);
+  if (isMissingTable(error)) return false;
+  if (error) throw new Error(`ext_prisma_risk: ${error.message}`);
+  return true;
+}
+
 /** Kode proyek yang boleh dilihat user: MIND ID seluruhnya, AH hanya proyek organisasinya. */
 async function visibleCodes(user: DummyUser): Promise<Set<string> | null> {
   if (isMindId(user)) return null;
@@ -40,7 +53,9 @@ async function visibleCodes(user: DummyUser): Promise<Set<string> | null> {
 export async function listRisks(user: DummyUser, projectCode?: string): Promise<PrismaRisk[]> {
   let q = db().from("ext_prisma_risk").select("*").order("project_code").order("risk_id");
   if (projectCode) q = q.eq("project_code", projectCode);
-  const rows = must(await q, "ext_prisma_risk") as PrismaRisk[];
+  const res = await q;
+  if (isMissingTable(res.error)) return [];
+  const rows = must(res, "ext_prisma_risk") as PrismaRisk[];
   const allowed = await visibleCodes(user);
   return allowed ? rows.filter((r) => allowed.has(r.project_code)) : rows;
 }
@@ -48,7 +63,9 @@ export async function listRisks(user: DummyUser, projectCode?: string): Promise<
 export async function listRiskHistory(user: DummyUser, projectCode?: string): Promise<PrismaHistory[]> {
   let q = db().from("ext_prisma_risk_history").select("*").order("period");
   if (projectCode) q = q.eq("project_code", projectCode);
-  const rows = must(await q, "ext_prisma_risk_history") as PrismaHistory[];
+  const res = await q;
+  if (isMissingTable(res.error)) return [];
+  const rows = must(res, "ext_prisma_risk_history") as PrismaHistory[];
   const allowed = await visibleCodes(user);
   return allowed ? rows.filter((r) => allowed.has(r.project_code)) : rows;
 }

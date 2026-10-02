@@ -244,3 +244,13 @@ export function RiskDetailTable({ risks, showProject = false, extra }: { risks: 
     </div>
   );
 }
+
+export function PrismaSetupNotice() {
+  return (
+    <div className="rounded-card border border-amber-300 bg-amber-50 p-6 text-sm text-amber-900">
+      <div className="mb-1 text-base font-semibold">Tabel risk register PRISMA belum dibuat</div>
+      Jalankan <code className="rounded bg-white px-1">supabase/migrations/20261002000000_prisma_risk.sql</code> di Supabase SQL Editor
+      (file sudah berisi data dummy), lalu muat ulang halaman ini.
+    </div>
+  );
+}

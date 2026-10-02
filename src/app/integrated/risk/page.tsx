@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { HeatmapLegend, LevelBadge, RiskDetailTable, RiskHeatmap, RiskHistoryChart, TopRiskList } from "@/components/risk";
+import { HeatmapLegend, LevelBadge, PrismaSetupNotice, RiskDetailTable, RiskHeatmap, RiskHistoryChart, TopRiskList } from "@/components/risk";
 import { btnGhost, Card, DummyBadge, Empty, input, PageHeader, td, th } from "@/components/ui";
 import { requirePermission } from "@/lib/auth/session";
-import { listRiskHistory, listRisks, sumHistory, type PrismaRisk } from "@/lib/db/prisma";
+import { listRiskHistory, listRisks, prismaAvailable, sumHistory, type PrismaRisk } from "@/lib/db/prisma";
 import { listProjects } from "@/lib/db/tracker";
 import { aggregateLevel, riskLevel } from "@/lib/risk/matrix";
 
@@ -15,6 +15,14 @@ const severity = (r: PrismaRisk) => riskLevel(r.likelihood, r.impact) * 100 + r.
 export default async function PrismaRiskPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const user = await requirePermission("integrated.read");
   const sp = await searchParams;
+  if (!(await prismaAvailable())) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Risk PRISMA — Portofolio" />
+        <PrismaSetupNotice />
+      </div>
+    );
+  }
   const [all, history, projects] = await Promise.all([listRisks(user), listRiskHistory(user), listProjects(user)]);
   const projectByCode = new Map(projects.map((p) => [p.code, p]));
   const codes = [...new Set(all.map((r) => r.project_code))];

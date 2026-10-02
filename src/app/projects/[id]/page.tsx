@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { LineChart } from "@/components/line-chart";
 import { listSnapshots } from "@/lib/db/snapshots";
-import { HeatmapLegend, RiskDetailTable, RiskHeatmap, RiskHistoryChart, TopRiskList } from "@/components/risk";
+import { HeatmapLegend, PrismaSetupNotice, RiskDetailTable, RiskHeatmap, RiskHistoryChart, TopRiskList } from "@/components/risk";
 import { BarChart, btn, btnDanger, btnGhost, Card, DummyBadge, Empty, GateBadge, input, LinkButton, PageHeader, Tabs, td, th } from "@/components/ui";
 import { db, must } from "@/lib/db/client";
-import { listRiskHistory, listRisks, sumHistory } from "@/lib/db/prisma";
+import { listRiskHistory, listRisks, prismaAvailable, sumHistory } from "@/lib/db/prisma";
 import { aggregateLevel, LEVEL_LABEL } from "@/lib/risk/matrix";
 import { can } from "@/lib/auth/roles";
 import { currentUser, requirePermission } from "@/lib/auth/session";
@@ -233,6 +233,7 @@ const TABS = [
 /** Tab Risk — tampilan Risk PRISMA per proyek (data dummy pengganti integrasi I-2). */
 async function RiskTab({ code }: { code: string }) {
   const user = await currentUser();
+  if (!(await prismaAvailable())) return <PrismaSetupNotice />;
   const [risks, history] = await Promise.all([listRisks(user, code), listRiskHistory(user, code)]);
   if (risks.length === 0) return <Empty>Belum ada risk register PRISMA untuk {code}.</Empty>;
   const top = risks.filter((r) => r.top_rank !== null).sort((a, b) => a.top_rank! - b.top_rank!);
