@@ -38,7 +38,8 @@ function isMissingTable(error: { code?: string; message: string } | null): boole
 
 /** false bila tabel PRISMA belum ada — halaman menampilkan petunjuk alih-alih error 500. */
 export async function prismaAvailable(): Promise<boolean> {
-  const { error } = await db().from("ext_prisma_risk").select("risk_id", { head: true, count: "exact" }).limit(1);
+  // Query biasa (bukan HEAD): pada HEAD, PostgREST tidak mengirim body sehingga galat "tabel tidak ada" tidak terbaca.
+  const { error } = await db().from("ext_prisma_risk").select("risk_id").limit(1);
   if (isMissingTable(error)) return false;
   if (error) throw new Error(`ext_prisma_risk: ${error.message}`);
   return true;
