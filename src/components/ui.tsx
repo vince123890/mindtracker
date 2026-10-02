@@ -1,26 +1,69 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Icon } from "./icons";
 import { GATE_LABEL, pct } from "@/lib/format";
 import type { PhaseIndices, ScoringConfig } from "@/lib/scoring/types";
 
-export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: ReactNode; actions?: ReactNode }) {
+export function PageHeader({
+  title,
+  subtitle,
+  actions,
+  back,
+}: {
+  title: string;
+  subtitle?: ReactNode;
+  actions?: ReactNode;
+  /** Tautan tombol kembali (panah kiri) di samping judul. */
+  back?: string;
+}) {
   return (
     <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900">{title}</h1>
-        {subtitle ? <div className="mt-1 text-sm text-slate-500">{subtitle}</div> : null}
+      <div className="flex items-start gap-3">
+        {back ? (
+          <Link href={back} className="no-print mt-1 rounded-lg p-1 text-slate-600 hover:bg-white hover:text-brand-navy" aria-label="Kembali">
+            <Icon name="ArrowLeft" className="h-6 w-6" />
+          </Link>
+        ) : null}
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900 md:text-3xl">{title}</h1>
+          {subtitle ? <div className="mt-1 text-sm text-slate-500">{subtitle}</div> : null}
+        </div>
       </div>
-      {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+      {actions ? <div className="no-print flex flex-wrap gap-2">{actions}</div> : null}
     </div>
   );
 }
 
-export function Card({ title, children, className = "" }: { title?: ReactNode; children: ReactNode; className?: string }) {
+export function Card({ title, children, className = "", actions }: { title?: ReactNode; children: ReactNode; className?: string; actions?: ReactNode }) {
   return (
-    <section className={`rounded-lg border border-slate-200 bg-white p-4 shadow-sm ${className}`}>
-      {title ? <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">{title}</h2> : null}
+    <section className={`rounded-card border border-line bg-card p-5 shadow-sm md:p-6 ${className}`}>
+      {title || actions ? (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          {title ? <h2 className="text-lg font-semibold text-slate-900">{title}</h2> : <span />}
+          {actions}
+        </div>
+      ) : null}
       {children}
     </section>
+  );
+}
+
+/** Tab bar halaman (pola "Projects Detail" PRISMA): latar biru muda, tab aktif putih. */
+export function Tabs({ items }: { items: { href: string; label: string; icon?: string; active: boolean }[] }) {
+  return (
+    <nav className="no-print mb-6 flex gap-2 overflow-x-auto rounded-card border border-tab-line bg-tab p-2" aria-label="Tab">
+      {items.map((t) => (
+        <Link
+          key={t.href}
+          href={t.href}
+          aria-current={t.active ? "page" : undefined}
+          className={`flex shrink-0 items-center gap-2 rounded-lg px-4 py-2.5 text-sm transition-colors ${t.active ? "bg-white font-semibold text-brand-navy shadow-sm" : "bg-slate-200/60 text-slate-700 hover:bg-white/80"}`}
+        >
+          {t.icon ? <Icon name={t.icon} className="h-4 w-4" /> : null}
+          {t.label}
+        </Link>
+      ))}
+    </nav>
   );
 }
 
@@ -117,12 +160,12 @@ export function BarChart({
           <div className="relative h-5 flex-1 rounded bg-slate-100">
             {r.value !== null ? (
               <div
-                className={`h-5 rounded ${threshold != null && r.value < threshold ? "bg-amber-400" : "bg-indigo-500"}`}
+                className={`h-5 rounded ${threshold != null && r.value < threshold ? "bg-brand-orange" : "bg-brand-blue"}`}
                 style={{ width: `${Math.min(100, Math.max(0, r.value * 100))}%` }}
               />
             ) : null}
             {threshold != null ? (
-              <div className="absolute top-0 h-5 border-l-2 border-dashed border-rose-500" style={{ left: `${threshold * 100}%` }} />
+              <div className="absolute top-0 h-5 border-l-2 border-dashed border-brand-red" style={{ left: `${threshold * 100}%` }} />
             ) : null}
           </div>
           <div className="w-14 text-right font-medium text-slate-800">{pct(r.value)}</div>
@@ -134,24 +177,21 @@ export function BarChart({
 }
 
 export function Empty({ children }: { children: ReactNode }) {
-  return <div className="rounded border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">{children}</div>;
+  return <div className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">{children}</div>;
 }
 
 export function LinkButton({ href, children, tone = "primary" }: { href: string; children: ReactNode; tone?: "primary" | "ghost" }) {
-  const cls =
-    tone === "primary"
-      ? "bg-indigo-600 text-white hover:bg-indigo-700"
-      : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50";
   return (
-    <Link href={href} className={`rounded px-3 py-1.5 text-sm font-medium ${cls}`}>
+    <Link href={href} className={tone === "primary" ? btn : btnGhost}>
       {children}
     </Link>
   );
 }
 
-export const btn = "rounded bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50";
-export const btnGhost = "rounded border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50";
-export const btnDanger = "rounded bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-700";
-export const input = "w-full rounded border border-slate-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none";
-export const th = "border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500";
-export const td = "border-b border-slate-100 px-2 py-2 align-top text-sm";
+export const btn = "inline-flex items-center gap-2 rounded-lg bg-brand-navy px-4 py-2 text-sm font-medium text-white hover:bg-brand-navy-dark disabled:opacity-50";
+export const btnGhost = "inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50";
+export const btnDanger = "inline-flex items-center gap-2 rounded-lg bg-brand-red px-4 py-2 text-sm font-medium text-white hover:bg-brand-red-dark";
+export const input = "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-brand-navy focus:ring-2 focus:ring-indigo-100 focus:outline-none";
+/** Header tabel navy (pola tabel "Detail Risk"). */
+export const th = "bg-brand-navy px-3 py-3 text-left text-sm font-semibold text-white first:rounded-tl-lg last:rounded-tr-lg";
+export const td = "border-b border-line px-3 py-3 align-top text-sm";

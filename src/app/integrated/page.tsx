@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { LevelBadge } from "@/components/risk";
 import { Card, DummyBadge, PageHeader, td, th } from "@/components/ui";
+import { listRisks } from "@/lib/db/prisma";
+import { aggregateLevel, riskLevel } from "@/lib/risk/matrix";
 import { can } from "@/lib/auth/roles";
 import { currentUser, isMindId, requirePermission } from "@/lib/auth/session";
 import { db, must } from "@/lib/db/client";
@@ -10,7 +13,6 @@ import { pct } from "@/lib/format";
 interface Ext { project_code: string; [k: string]: string | number | null }
 
 const SCHEDULE: Record<string, string> = { ON_TRACK: "text-emerald-700", AT_RISK: "text-amber-700", DELAYED: "text-rose-700" };
-const RISK: Record<string, string> = { LOW: "text-emerald-700", MEDIUM: "text-amber-700", HIGH: "text-rose-600", EXTREME: "font-bold text-rose-800" };
 const STAGES = ["FEL-0", "FEL-1", "FEL-2", "FEL-3", "EPC", "DO"];
 
 /** Integrated Dashboard (Landing) — ringkasan lintas fungsi BD / PMO / DO (PT-01 §1). */
@@ -20,15 +22,14 @@ export default async function IntegratedPage() {
   const trackerVisible = can(user.role, "project.read") || can(user.role, "crossholding.read");
   const projects = trackerVisible ? await listProjects(user) : [];
   const overview = await currentPhaseOverview(projects);
-  const [progress, risk, docs] = await Promise.all([
+  const [progress, docs, risks] = await Promise.all([
     db().from("ext_project_progress").select("*"),
-    db().from("ext_project_risk").select("*"),
     db().from("ext_project_document").select("*"),
+    listRisks(user),
   ]);
   const allowedCodes = new Set(projects.map((p) => p.code));
   const visible = (rows: Ext[]) => rows.filter((r) => isMindId(user) || allowedCodes.has(r.project_code));
   const prog = visible(must(progress, "ext_project_progress") as Ext[]);
-  const rsk = new Map(visible(must(risk, "ext_project_risk") as Ext[]).map((r) => [r.project_code, r]));
   const doc = new Map(visible(must(docs, "ext_project_document") as Ext[]).map((r) => [r.project_code, r]));
   const showDo = can(user.role, "do.read");
   const [production, rcas, aps] = showDo ? await Promise.all([listProduction(user), listRca(user), listActionPlans(user)]) : [[], [], []];
@@ -48,7 +49,7 @@ export default async function IntegratedPage() {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Card><div className="text-xs text-slate-500">PMO — proyek dipantau tracker</div><div className="text-2xl font-bold">{projects.length}</div></Card>
         <Card><div className="text-xs text-slate-500">BD — FS lengkap (MIND Gate)</div><div className="text-2xl font-bold">{[...doc.values()].filter((d) => Number(d.fs_completeness) >= 100).length} / {doc.size}</div></Card>
-        <Card><div className="text-xs text-slate-500">Risiko HIGH/EXTREME (PRISMA)</div><div className="text-2xl font-bold text-rose-700">{[...rsk.values()].filter((r) => r.risk_rating === "HIGH" || r.risk_rating === "EXTREME").length}</div></Card>
+        <Card><div className="text-xs text-slate-500">Risiko open level Tinggi (PRISMA)</div><div className="text-2xl font-bold text-brand-red">{risks.filter((r) => r.status === "OPEN" && riskLevel(r.likelihood, r.impact) === 5).length}</div><Link className="text-xs text-brand-navy underline" href="/integrated/risk">Lihat Risk PRISMA</Link></Card>
         <Card><div className="text-xs text-slate-500">DO — pencapaian produksi rata-rata</div><div className="text-2xl font-bold">{showDo && target ? pct(achieved / target) : "—"}</div>{showDo ? <div className="text-xs text-rose-700">{aps.filter(isOverdue).length} action plan terlambat · {rcas.filter((r) => r.status === "MENUNGGU_REVIEW").length} RCA menunggu review</div> : null}</Card>
       </div>
 
@@ -67,7 +68,8 @@ export default async function IntegratedPage() {
                 const p = projects.find((x) => x.code === code);
                 const sc = p ? overview.get(p.id) : undefined;
                 const pr = prog.find((x) => x.project_code === code);
-                const r = rsk.get(code);
+                const rs = risks.filter((x) => x.project_code === code);
+                const openRs = rs.filter((x) => x.status === "OPEN");
                 const d = doc.get(code);
                 const stage = stageOf(code);
                 const idx = STAGES.indexOf(stage);
@@ -82,7 +84,7 @@ export default async function IntegratedPage() {
                     <td className={td}>{sc ? pct(sc.result.indices.index1) : "—"}</td>
                     <td className={td}>{pr ? `${pr.physical_progress}%` : "—"}</td>
                     <td className={`${td} ${SCHEDULE[String(pr?.schedule_status)] ?? ""}`}>{pr?.schedule_status ?? "—"}</td>
-                    <td className={`${td} ${RISK[String(r?.risk_rating)] ?? ""}`}>{r ? `${r.risk_rating} · ${r.open_risks} risiko` : "—"}<div className="text-xs text-slate-500">{r?.top_risk}</div></td>
+                    <td className={td}>{rs.length ? <><LevelBadge level={aggregateLevel(rs)} /> <span className="text-xs">{openRs.length} open</span></> : "—"}<div className="text-xs text-slate-500">{rs.find((x) => x.top_rank === 1)?.title}</div></td>
                     <td className={td}>{d ? `FS ${d.fs_completeness}% · ${d.fid_status}` : "—"}<div className="text-xs text-slate-500">{d?.rkap_status}</div></td>
                   </tr>
                 );

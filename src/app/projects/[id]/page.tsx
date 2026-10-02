@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { LineChart } from "@/components/line-chart";
 import { listSnapshots } from "@/lib/db/snapshots";
-import { BarChart, btn, btnDanger, btnGhost, Card, GateBadge, input, LinkButton, PageHeader, td, th } from "@/components/ui";
+import { HeatmapLegend, RiskDetailTable, RiskHeatmap, RiskHistoryChart, TopRiskList } from "@/components/risk";
+import { BarChart, btn, btnDanger, btnGhost, Card, DummyBadge, Empty, GateBadge, input, LinkButton, PageHeader, Tabs, td, th } from "@/components/ui";
+import { db, must } from "@/lib/db/client";
+import { listRiskHistory, listRisks, sumHistory } from "@/lib/db/prisma";
+import { aggregateLevel, LEVEL_LABEL } from "@/lib/risk/matrix";
 import { can } from "@/lib/auth/roles";
 import { currentUser, requirePermission } from "@/lib/auth/session";
 import {
@@ -42,6 +46,7 @@ export default async function ProjectDetail({
   const org = orgs.find((o) => o.id === project.organization_id);
   const typeName = new Map(types.map((t) => [t.code, t.name]));
   const canComment = can(user.role, "phase.comment");
+  const tab = TABS.some((t) => t.id === sp.tab) ? sp.tab! : "highlight";
 
   // Pratinjau dampak perubahan tipe (VR-14) — dihitung dengan engine yang sama
   let impact: { before: Scorecard; after: Scorecard; t1: string; t2: string | null } | null = null;
@@ -54,12 +59,13 @@ export default async function ProjectDetail({
   }
 
   return (
-    <div className="space-y-6">
+    <div>
       <PageHeader
-        title={`${project.code} · ${project.name}`}
+        back="/projects"
+        title={`Projects Detail: ${project.name}`}
         subtitle={
           <>
-            {org?.name} · {project.location} · Tipe {project.project_type_1} ({typeName.get(project.project_type_1)})
+            {project.code} · {org?.name} · {project.location} · Tipe {project.project_type_1} ({typeName.get(project.project_type_1)})
             {project.project_type_2 ? ` + ${project.project_type_2} (${typeName.get(project.project_type_2)})` : ""}
           </>
         }
@@ -70,7 +76,12 @@ export default async function ProjectDetail({
           </>
         }
       />
+      <Tabs items={TABS.map((t) => ({ href: `/projects/${project.id}?tab=${t.id}`, label: t.label, icon: t.icon, active: t.id === tab }))} />
 
+      {tab === "risk" ? <RiskTab code={project.code} /> : null}
+      {tab === "activity" ? <ActivityTab projectId={project.id} instanceIds={phases.map((p) => p.instance.id)} /> : null}
+      {tab === "highlight" ? (
+      <div className="space-y-6">
       <Card title="Index per fase — replika sheet Dashboard tracker v1.4">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -144,29 +155,10 @@ export default async function ProjectDetail({
         </Card>
       </div>
 
-      <Card title="Riwayat keputusan gate">
-        {transitions.length === 0 ? <p className="text-sm text-slate-500">Belum ada transisi.</p> : (
-          <table className="w-full">
-            <thead><tr><th className={th}>Waktu</th><th className={th}>Fase</th><th className={th}>Transisi</th><th className={th}>Oleh</th><th className={th}>Index saat keputusan</th><th className={th}>Catatan</th></tr></thead>
-            <tbody>
-              {transitions.map((t) => (
-                <tr key={t.id}>
-                  <td className={td}>{dateTime(t.created_at)}</td>
-                  <td className={td}>{phases.find((p) => p.instance.id === t.phase_instance_id)?.instance.phase_code}</td>
-                  <td className={td}>{GATE_LABEL[t.from_status] ?? t.from_status} → {GATE_LABEL[t.to_status] ?? t.to_status}</td>
-                  <td className={td}>{t.actor?.name}</td>
-                  <td className={`${td} text-xs`}>{t.indices ? `FDMI ${pct(t.indices.index1)} · FGDI ${pct(t.indices.index2)} · FDCI ${pct(t.indices.index3)} · ? ${t.indices.index4}` : "—"}</td>
-                  <td className={td}>{t.note ?? "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </Card>
-
       {can(user.role, "project.changetype") ? (
         <Card title="Ubah tipe proyek (PMO Admin) — VR-14">
           <form className="flex flex-wrap items-end gap-2 text-sm">
+            <input type="hidden" name="tab" value="highlight" />
             <label>Type 1<select name="t1" defaultValue={impact?.t1 ?? project.project_type_1} className={input}>{types.map((t) => <option key={t.code} value={t.code}>{t.code} — {t.name}</option>)}</select></label>
             <label>Type 2<select name="t2" defaultValue={impact ? impact.t2 ?? "" : project.project_type_2 ?? ""} className={input}><option value="">— tidak ada —</option>{types.map((t) => <option key={t.code} value={t.code}>{t.code} — {t.name}</option>)}</select></label>
             <button className={btnGhost}>Hitung dampak</button>
@@ -200,6 +192,108 @@ export default async function ProjectDetail({
           </form>
         </Card>
       ) : null}
+      </div>
+      ) : null}
+
+      {tab === "gate" ? (
+      <div className="space-y-6">
+      <Card title="Riwayat keputusan gate">
+        {transitions.length === 0 ? <p className="text-sm text-slate-500">Belum ada transisi.</p> : (
+          <table className="w-full">
+            <thead><tr><th className={th}>Waktu</th><th className={th}>Fase</th><th className={th}>Transisi</th><th className={th}>Oleh</th><th className={th}>Index saat keputusan</th><th className={th}>Catatan</th></tr></thead>
+            <tbody>
+              {transitions.map((t) => (
+                <tr key={t.id}>
+                  <td className={td}>{dateTime(t.created_at)}</td>
+                  <td className={td}>{phases.find((p) => p.instance.id === t.phase_instance_id)?.instance.phase_code}</td>
+                  <td className={td}>{GATE_LABEL[t.from_status] ?? t.from_status} → {GATE_LABEL[t.to_status] ?? t.to_status}</td>
+                  <td className={td}>{t.actor?.name}</td>
+                  <td className={`${td} text-xs`}>{t.indices ? `FDMI ${pct(t.indices.index1)} · FGDI ${pct(t.indices.index2)} · FDCI ${pct(t.indices.index3)} · ? ${t.indices.index4}` : "—"}</td>
+                  <td className={td}>{t.note ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Card>
+
+      </div>
+      ) : null}
     </div>
+  );
+}
+
+const TABS = [
+  { id: "highlight", label: "Highlight Project", icon: "Trophy" },
+  { id: "risk", label: "Risk", icon: "TriangleAlert" },
+  { id: "gate", label: "Phase Gate", icon: "ShieldCheck" },
+  { id: "activity", label: "Activity", icon: "Activity" },
+];
+
+/** Tab Risk — tampilan Risk PRISMA per proyek (data dummy pengganti integrasi I-2). */
+async function RiskTab({ code }: { code: string }) {
+  const user = await currentUser();
+  const [risks, history] = await Promise.all([listRisks(user, code), listRiskHistory(user, code)]);
+  if (risks.length === 0) return <Empty>Belum ada risk register PRISMA untuk {code}.</Empty>;
+  const top = risks.filter((r) => r.top_rank !== null).sort((a, b) => a.top_rank! - b.top_rank!);
+  const open = risks.filter((r) => r.status === "OPEN");
+  const level = aggregateLevel(risks);
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+        <DummyBadge />
+        <span>Rating agregat: <b>{level ? LEVEL_LABEL[level] : "—"}</b></span>
+        <span>· {open.length} open · {risks.length - open.length} mitigated/closed</span>
+      </div>
+      <div className="grid gap-6 lg:grid-cols-12">
+        <div className="space-y-6 lg:col-span-7">
+          <Card title="Risk Heatmap">
+            <RiskHeatmap markers={top.map((r) => ({ label: String(r.top_rank), likelihood: r.likelihood, impact: r.impact, title: `${r.top_rank}. ${r.title}` }))} />
+            <HeatmapLegend />
+          </Card>
+          <Card title="History">
+            <RiskHistoryChart rows={sumHistory(history)} />
+          </Card>
+        </div>
+        <Card title="Top Risk" className="lg:col-span-5">
+          <TopRiskList risks={top} />
+        </Card>
+      </div>
+      <Card title="Detail Risk">
+        <RiskDetailTable risks={risks} />
+      </Card>
+    </div>
+  );
+}
+
+interface AuditRow { id: number; actor_id: string; actor_role: string; entity_type: string; entity_id: string; action: string; reason: string | null; created_at: string }
+
+/** Tab Activity — jejak audit proyek dan fase-fasenya. */
+async function ActivityTab({ projectId, instanceIds }: { projectId: string; instanceIds: string[] }) {
+  const keys = [projectId, ...instanceIds];
+  const rows = must(
+    await db().from("audit_log_entry").select("id, actor_id, actor_role, entity_type, entity_id, action, reason, created_at").order("created_at", { ascending: false }).limit(500),
+    "audit",
+  ) as AuditRow[];
+  const mine = rows.filter((e) => keys.includes(e.entity_id) || keys.includes(e.entity_id.split("/")[0])).slice(0, 100);
+  return (
+    <Card title="Activity">
+      {mine.length === 0 ? <Empty>Belum ada aktivitas tercatat untuk proyek ini.</Empty> : (
+        <table className="w-full">
+          <thead><tr><th className={th}>Waktu</th><th className={th}>User · Role</th><th className={th}>Entitas</th><th className={th}>Aksi</th><th className={th}>Alasan</th></tr></thead>
+          <tbody>
+            {mine.map((e) => (
+              <tr key={e.id}>
+                <td className={`${td} whitespace-nowrap`}>{dateTime(e.created_at)}</td>
+                <td className={td}>{e.actor_id}<div className="text-xs text-slate-500">{e.actor_role}</div></td>
+                <td className={td}>{e.entity_type}</td>
+                <td className={td}>{e.action}</td>
+                <td className={td}>{e.reason ?? "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </Card>
   );
 }

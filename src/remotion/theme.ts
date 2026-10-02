@@ -7,17 +7,18 @@ const { fontFamily } = loadFont("normal", { weights: ["400", "600", "800"], subs
 
 export const theme = {
   colors: {
-    bg: "#0B1024",
-    bgAlt: "#121A38",
-    primary: "#6366F1", // warna utama (indigo MIND Tracker) — satu elemen hero per frame
-    accent: "#22D3EE",
+    // Mengikuti design system (docs/DESIGN-SYSTEM-MIND-Tracker.md): latar navy brand, biru & oranye seri grafik.
+    bg: "#121D3D",
+    bgAlt: "#1C2D5A",
+    primary: "#4C7DF0", // brand-blue versi terang agar terbaca di latar gelap — satu elemen hero per frame
+    accent: "#F28C28", // brand-orange terang
     ok: "#34D399",
     warn: "#FBBF24",
-    danger: "#FB7185",
+    danger: "#E8455A", // brand-red terang
     text: "#F8FAFC",
     textDim: "#94A3B8",
     track: "rgba(148, 163, 184, 0.16)",
-    glow: "rgba(99, 102, 241, 0.45)",
+    glow: "rgba(76, 125, 240, 0.45)",
   },
   font: fontFamily,
   ease: {

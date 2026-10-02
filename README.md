@@ -41,6 +41,8 @@ scripts/generate_seed.py generator seed & fixture uji dari ../docs/Dummy Tracker
    1. `supabase/migrations/20261001000000_init.sql`
    2. `supabase/migrations/20261001000100_rto_and_dummy_sources.sql`
    3. `supabase/seed.sql`
+   4. `supabase/migrations/20261002000000_prisma_risk.sql` (risk register PRISMA dummy, sudah berisi datanya;
+      database yang sudah di-seed cukup menjalankan file ini saja)
 
    Alternatif dengan Supabase CLI: `supabase link --project-ref <ref>` lalu `supabase db push`
    dan jalankan `seed.sql`.
@@ -92,3 +94,9 @@ ber-NBSP/titik) dan menulis ulang `supabase/seed.sql` serta fixture uji paritas.
 | Fajar | Tim Proyek | Antam |
 | Gita | PIC Operasi AH | Antam |
 | Hadi | PMO Anggota Holding | Timah (uji isolasi data) |
+
+## Design system
+
+Tampilan mengikuti layar referensi *Projects Detail / Risk* (PRISMA): header navy, menu modul aktif merah,
+tab bar biru muda, kartu putih, header tabel navy. Token warna ada di `src/app/globals.css` (`@theme`);
+halaman hidup di `/design-system`. Skala `indigo` Tailwind dipetakan ulang ke navy brand.

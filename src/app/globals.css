@@ -1,16 +1,66 @@
 @import "tailwindcss";
 
+/*
+ * Design system MIND Tracker — mengikuti referensi layar "Projects Detail / Risk" (PRISMA).
+ * Dokumen: docs/DESIGN-SYSTEM-MIND-Tracker.md · halaman hidup: /design-system.
+ * Seluruh warna dipakai lewat token di bawah; skala indigo bawaan Tailwind dipetakan ulang ke biru navy brand
+ * sehingga komponen lama otomatis mengikuti brand.
+ */
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+
+  /* Brand */
+  --color-brand-navy: #1c2d5a; /* header, tombol utama, header tabel */
+  --color-brand-navy-dark: #142247; /* hover */
+  --color-brand-red: #d4243b; /* menu aktif, aksi destruktif */
+  --color-brand-red-dark: #b01c30;
+  --color-brand-blue: #0b2f8c; /* seri utama grafik */
+  --color-brand-orange: #d9730d; /* seri kedua grafik */
+
+  /* Permukaan */
+  --color-surface: #f4f5f7; /* latar halaman */
+  --color-card: #ffffff;
+  --color-line: #e3e6eb; /* border kartu & pemisah */
+  --color-tab: #e4f2fc; /* tab bar */
+  --color-tab-line: #9ccdf2;
+
+  /* Level risiko PRISMA (heatmap 5x5) */
+  --color-risk-1: #3a9e10;
+  --color-risk-2: #b8e986;
+  --color-risk-3: #ffe83a;
+  --color-risk-4: #ffa83f;
+  --color-risk-5: #d2141f;
+
+  /* Skala indigo bawaan dipetakan ke navy brand */
+  --color-indigo-50: #eef3fb;
+  --color-indigo-100: #dce6f6;
+  --color-indigo-200: #b9ccec;
+  --color-indigo-300: #8ea9dc;
+  --color-indigo-400: #5c7fc6;
+  --color-indigo-500: #2b4c9b;
+  --color-indigo-600: #1e3a7b;
+  --color-indigo-700: #172e63;
+  --color-indigo-800: #12244d;
+  --color-indigo-900: #0d1b3a;
+
+  --radius-card: 0.75rem;
+}
+
 body {
-  font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+  background: var(--color-surface);
 }
 
 @media print {
   header,
   aside,
+  nav,
   .no-print {
     display: none !important;
   }
   main {
     padding: 0 !important;
+  }
+  body {
+    background: #fff;
   }
 }

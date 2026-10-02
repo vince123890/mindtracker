@@ -82,53 +82,62 @@ export function can(role: Role, permission: Permission): boolean {
 export interface MenuItem {
   href: string;
   label: string;
+  /** Nama ikon lucide (dipetakan di components/app-nav.tsx). */
   icon: string;
   permission: Permission | null;
-  group?: string;
+  group: MenuGroup;
 }
 
+export type MenuGroup = "dashboard" | "tracker" | "gate" | "rto" | "snapshot" | "do" | "master" | "report";
+
+/** Menu tingkat atas = modul pada Analysis/[Timeline & Effort]; sub menu = item di dalamnya. */
+export const MENU_GROUPS: { id: MenuGroup; label: string; module: string; icon: string }[] = [
+  { id: "dashboard", label: "Dashboard", module: "Dashboard & Reporting · Integrated Dashboard", icon: "LayoutDashboard" },
+  { id: "tracker", label: "PM Tracker", module: "Engine 1 — PM Tracker", icon: "ClipboardList" },
+  { id: "gate", label: "Phase Gate", module: "Phase Gate Workflow", icon: "CircleCheck" },
+  { id: "rto", label: "RTO Tool", module: "Engine 2 — RTO Tool", icon: "Wrench" },
+  { id: "snapshot", label: "Snapshot", module: "Progress Snapshot", icon: "ChartLine" },
+  { id: "do", label: "Dashboard DO", module: "Dashboard DO", icon: "Factory" },
+  { id: "master", label: "Master Data", module: "Master Data", icon: "Database" },
+  { id: "report", label: "Laporan", module: "Laporan & Administrasi", icon: "FileText" },
+];
+
 export const MENU: MenuItem[] = [
-  // Dashboard & Reporting — "Dashboard Agregat Dual-Engine"; Dashboard & Integrasi — "Integrated Dashboard (Landing)"
-  { href: "/", label: "Dashboard", icon: "📊", permission: null, group: "Dashboard" },
-  { href: "/integrated", label: "Integrated Dashboard", icon: "🧭", permission: "integrated.read", group: "Dashboard" },
+  { href: "/", label: "Dashboard", icon: "LayoutDashboard", permission: null, group: "dashboard" },
+  { href: "/integrated", label: "Integrated Dashboard", icon: "Compass", permission: "integrated.read", group: "dashboard" },
+  { href: "/integrated/risk", label: "Risk PRISMA", icon: "TriangleAlert", permission: "integrated.read", group: "dashboard" },
 
-  // Engine 1 — PM Tracker
-  { href: "/tracker", label: "Scorecard Proyek", icon: "🗒️", permission: "project.read", group: "Engine 1 — PM Tracker" },
+  { href: "/tracker", label: "Scorecard Proyek", icon: "ClipboardList", permission: "project.read", group: "tracker" },
 
-  // Phase Gate Workflow
-  { href: "/gates", label: "Persetujuan Gate", icon: "✅", permission: "gate.approve", group: "Phase Gate Workflow" },
-  { href: "/revision-log", label: "Revision Log Terpusat", icon: "💬", permission: "project.read", group: "Phase Gate Workflow" },
-  { href: "/gates/history", label: "Riwayat Transisi Gate", icon: "🔁", permission: "project.read", group: "Phase Gate Workflow" },
+  { href: "/gates", label: "Persetujuan Gate", icon: "CircleCheck", permission: "gate.approve", group: "gate" },
+  { href: "/revision-log", label: "Revision Log Terpusat", icon: "MessageSquare", permission: "project.read", group: "gate" },
+  { href: "/gates/history", label: "Riwayat Transisi Gate", icon: "History", permission: "project.read", group: "gate" },
 
-  // Engine 2 — RTO Tool
-  { href: "/rto", label: "RTO Assessment", icon: "🛠️", permission: "rto.read", group: "Engine 2 — RTO Tool" },
-  { href: "/rto/guide", label: "Panduan RTO", icon: "📘", permission: "rto.read", group: "Engine 2 — RTO Tool" },
+  { href: "/rto", label: "RTO Assessment", icon: "Wrench", permission: "rto.read", group: "rto" },
+  { href: "/rto/guide", label: "Panduan RTO", icon: "BookOpen", permission: "rto.read", group: "rto" },
 
-  // Progress Snapshot
-  { href: "/snapshots", label: "Snapshot & Progress Curve", icon: "📉", permission: "project.read", group: "Progress Snapshot" },
+  { href: "/snapshots", label: "Snapshot & Progress Curve", icon: "ChartLine", permission: "project.read", group: "snapshot" },
 
-  // Dashboard DO (Dashboard & Integrasi)
-  { href: "/do/production", label: "Production Performance", icon: "🏭", permission: "do.read", group: "Dashboard DO" },
-  { href: "/do/parameters", label: "Key Parameter Operasi", icon: "🎛️", permission: "do.read", group: "Dashboard DO" },
-  { href: "/do/maintenance", label: "Maintenance Performance", icon: "🔧", permission: "do.read", group: "Dashboard DO" },
-  { href: "/do/management", label: "Management Dashboard", icon: "🏢", permission: "do.management.read", group: "Dashboard DO" },
-  { href: "/do/rca", label: "Root Cause Analysis", icon: "🔎", permission: "do.read", group: "Dashboard DO" },
-  { href: "/do/action-plans", label: "Action Plan Monitoring", icon: "📌", permission: "do.read", group: "Dashboard DO" },
-  { href: "/strategy", label: "Strategy & Simulation", icon: "📈", permission: "strategy.read", group: "Dashboard DO" },
+  { href: "/do/production", label: "Production Performance", icon: "Factory", permission: "do.read", group: "do" },
+  { href: "/do/parameters", label: "Key Parameter Operasi", icon: "Gauge", permission: "do.read", group: "do" },
+  { href: "/do/maintenance", label: "Maintenance Performance", icon: "Cog", permission: "do.read", group: "do" },
+  { href: "/do/management", label: "Management Dashboard", icon: "Building2", permission: "do.management.read", group: "do" },
+  { href: "/do/rca", label: "Root Cause Analysis", icon: "Search", permission: "do.read", group: "do" },
+  { href: "/do/action-plans", label: "Action Plan Monitoring", icon: "Pin", permission: "do.read", group: "do" },
+  { href: "/strategy", label: "Strategy & Simulation", icon: "TrendingUp", permission: "strategy.read", group: "do" },
 
-  // Master Data
-  { href: "/projects", label: "Master Proyek", icon: "📁", permission: "project.read", group: "Master Data" },
-  { href: "/master/phases", label: "Master Phase", icon: "🪜", permission: "master.read", group: "Master Data" },
-  { href: "/master/chapters", label: "Dimension / Function", icon: "🗂️", permission: "master.read", group: "Master Data" },
-  { href: "/master/deliverables", label: "Deliverable & Applicability", icon: "📚", permission: "master.read", group: "Master Data" },
-  { href: "/master/project-types", label: "Tipe Proyek", icon: "🏷️", permission: "master.read", group: "Master Data" },
-  { href: "/master/rto", label: "Master RTO", icon: "🧱", permission: "master.read", group: "Master Data" },
-  { href: "/master/scoring-config", label: "Scoring Config", icon: "⚙️", permission: "master.read", group: "Master Data" },
-  { href: "/master/workflow", label: "Workflow Config", icon: "🔀", permission: "master.read", group: "Master Data" },
+  { href: "/projects", label: "Master Proyek", icon: "FolderKanban", permission: "project.read", group: "master" },
+  { href: "/master/phases", label: "Master Phase", icon: "ListOrdered", permission: "master.read", group: "master" },
+  { href: "/master/chapters", label: "Dimension / Function", icon: "FolderTree", permission: "master.read", group: "master" },
+  { href: "/master/deliverables", label: "Deliverable & Applicability", icon: "Library", permission: "master.read", group: "master" },
+  { href: "/master/project-types", label: "Tipe Proyek", icon: "Tags", permission: "master.read", group: "master" },
+  { href: "/master/rto", label: "Master RTO", icon: "Blocks", permission: "master.read", group: "master" },
+  { href: "/master/scoring-config", label: "Scoring Config", icon: "SlidersHorizontal", permission: "master.read", group: "master" },
+  { href: "/master/workflow", label: "Workflow Config", icon: "Workflow", permission: "master.read", group: "master" },
 
-  // Dashboard & Reporting / Administrasi
-  { href: "/reports", label: "Laporan", icon: "📑", permission: "report.read", group: "Laporan & Administrasi" },
-  { href: "/audit", label: "Audit Log", icon: "🕘", permission: "audit.read", group: "Laporan & Administrasi" },
+  { href: "/reports", label: "Laporan", icon: "FileText", permission: "report.read", group: "report" },
+  { href: "/audit", label: "Audit Log", icon: "ScrollText", permission: "audit.read", group: "report" },
+  { href: "/design-system", label: "Design System", icon: "Palette", permission: null, group: "report" },
 ];
 
 export function menuFor(role: Role): MenuItem[] {
