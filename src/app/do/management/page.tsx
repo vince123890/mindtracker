@@ -22,10 +22,10 @@ export default async function ManagementPage() {
   return (
     <div className="space-y-4">
       <PageHeader title="Management Dashboard (Grup)" subtitle={<span className="flex items-center gap-2">Peringkat pencapaian produksi antar Anggota Holding · <DummyBadge /></span>} />
-      <Card title="Pencapaian produksi (rata-rata realisasi ÷ target, 6 bulan)">
+      <Card title="Pencapaian produksi (rata-rata realisasi ÷ target, 6 bulan)" source="mct.production.derived">
         <BarChart threshold={1} rows={rows.map((r) => ({ label: r.org.name, value: r.ratio }))} />
       </Card>
-      <Card title="Peringkat">
+      <Card title="Peringkat" source="mct.production.derived">
         <table className="w-full">
           <thead><tr><th className={th}>#</th><th className={th}>Anggota Holding</th><th className={th}>Pencapaian</th><th className={th}>RCA belum disetujui</th><th className={th}>Action plan terlambat</th></tr></thead>
           <tbody>{rows.map((r, i) => <tr key={r.org.id}><td className={td}>{i + 1}</td><td className={td}>{r.org.name}</td><td className={td}>{pct(r.ratio)}</td><td className={td}>{r.rcaOpen}</td><td className={td}>{r.apLate}</td></tr>)}</tbody>

@@ -15,7 +15,7 @@ export default async function MaintenancePage() {
   return (
     <div>
       <PageHeader title="Maintenance Performance" subtitle={<span className="flex items-center gap-2">Availability · MTTR · MTBF · work order · <DummyBadge /></span>} />
-      <Card>
+      <Card source="mct.maintenance">
         <table className="w-full">
           <thead><tr><th className={th}>AH · Plant</th><th className={th}>Equipment</th><th className={th}>Availability (6 bln)</th><th className={th}>Availability terakhir</th><th className={th}>MTTR (jam)</th><th className={th}>MTBF (jam)</th><th className={th}>WO terbuka</th></tr></thead>
           <tbody>

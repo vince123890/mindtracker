@@ -243,24 +243,24 @@ async function RiskTab({ code }: { code: string }) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
         <DummyBadge />
-        <span>Rating agregat: <b>{level ? LEVEL_LABEL[level] : "—"}</b></span>
+        <span title="Dihitung dari PRISMA Risk Register: level tertinggi risiko Open">Rating agregat (PRISMA): <b>{level ? LEVEL_LABEL[level] : "—"}</b></span>
         <span>· {open.length} open · {risks.length - open.length} mitigated/closed</span>
       </div>
       <div className="grid gap-6 lg:grid-cols-12">
         <div className="space-y-6 lg:col-span-7">
-          <Card title="Risk Heatmap">
+          <Card title="Risk Heatmap" source="prisma.matrix">
             <RiskHeatmap markers={top.map((r) => ({ label: String(r.top_rank), likelihood: r.likelihood, impact: r.impact, title: `${r.top_rank}. ${r.title}` }))} />
             <HeatmapLegend />
           </Card>
-          <Card title="History">
+          <Card title="History" source="prisma.history">
             <RiskHistoryChart rows={sumHistory(history)} />
           </Card>
         </div>
-        <Card title="Top Risk" className="lg:col-span-5">
+        <Card title="Top Risk" className="lg:col-span-5" source="prisma.top">
           <TopRiskList risks={top} />
         </Card>
       </div>
-      <Card title="Detail Risk">
+      <Card title="Detail Risk" source="prisma.detail">
         <RiskDetailTable risks={risks} />
       </Card>
     </div>

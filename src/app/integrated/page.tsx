@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { LevelBadge } from "@/components/risk";
-import { Card, DummyBadge, PageHeader, td, th } from "@/components/ui";
+import { Card, DummyBadge, PageHeader, SourceNote, td, th } from "@/components/ui";
 import { listRisks } from "@/lib/db/prisma";
 import { aggregateLevel, riskLevel } from "@/lib/risk/matrix";
 import { can } from "@/lib/auth/roles";
@@ -47,13 +47,13 @@ export default async function IntegratedPage() {
       />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Card><div className="text-xs text-slate-500">PMO — proyek dipantau tracker</div><div className="text-2xl font-bold">{projects.length}</div></Card>
-        <Card><div className="text-xs text-slate-500">BD — FS lengkap (MIND Gate)</div><div className="text-2xl font-bold">{[...doc.values()].filter((d) => Number(d.fs_completeness) >= 100).length} / {doc.size}</div></Card>
-        <Card><div className="text-xs text-slate-500">Risiko open level Tinggi (PRISMA)</div><div className="text-2xl font-bold text-brand-red">{risks.filter((r) => r.status === "OPEN" && riskLevel(r.likelihood, r.impact) === 5).length}</div><Link className="text-xs text-brand-navy underline" href="/integrated/risk">Lihat Risk PRISMA</Link></Card>
-        <Card><div className="text-xs text-slate-500">DO — pencapaian produksi rata-rata</div><div className="text-2xl font-bold">{showDo && target ? pct(achieved / target) : "—"}</div>{showDo ? <div className="text-xs text-rose-700">{aps.filter(isOverdue).length} action plan terlambat · {rcas.filter((r) => r.status === "MENUNGGU_REVIEW").length} RCA menunggu review</div> : null}</Card>
+        <Card><div className="text-xs text-slate-500">PMO — proyek dipantau tracker</div><div className="text-2xl font-bold">{projects.length}</div><div className="mt-1 text-[11px] text-slate-500">Sumber: MIND Tracker (internal)</div></Card>
+        <Card><div className="text-xs text-slate-500">BD — FS lengkap (MIND Gate)</div><div className="text-2xl font-bold">{[...doc.values()].filter((d) => Number(d.fs_completeness) >= 100).length} / {doc.size}</div><SourceNote compact source="mindgate.document" className="mt-1" /></Card>
+        <Card><div className="text-xs text-slate-500">Risiko open level Tinggi (PRISMA)</div><div className="text-2xl font-bold text-brand-red">{risks.filter((r) => r.status === "OPEN" && riskLevel(r.likelihood, r.impact) === 5).length}</div><Link className="text-xs text-brand-navy underline" href="/integrated/risk">Lihat Risk PRISMA</Link><SourceNote compact source="prisma.aggregate" className="mt-1" /></Card>
+        <Card><div className="text-xs text-slate-500">DO — pencapaian produksi rata-rata</div><div className="text-2xl font-bold">{showDo && target ? pct(achieved / target) : "—"}</div>{showDo ? <div className="text-xs text-rose-700">{aps.filter(isOverdue).length} action plan terlambat · {rcas.filter((r) => r.status === "MENUNGGU_REVIEW").length} RCA menunggu review</div> : null}<SourceNote compact source="mct.production.derived" className="mt-1" /></Card>
       </div>
 
-      <Card title="Peta proyek FEL-0 → EPC → DO">
+      <Card title="Peta proyek FEL-0 → EPC → DO" source={["mindproject.progress", "prisma.aggregate", "mindgate.document"]}>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -92,7 +92,7 @@ export default async function IntegratedPage() {
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-xs text-slate-500">Sumber: MIND Tracker (FDMI) · MIND Project — progres & jadwal · PRISMA — risiko · MIND Gate — dokumen. Tiga sumber terakhir adalah data dummy; integrasi read-only dikerjakan saat development.</p>
+        <p className="mt-2 text-xs text-slate-500">Kolom: Kematangan ← MIND Tracker (internal) · Progres fisik & Jadwal ← MIND Project · Risiko ← PRISMA · Dokumen / FID ← MIND Gate. Ketiga sumber eksternal masih data dummy; integrasi read-only dikerjakan saat development.</p>
       </Card>
 
       {showDo ? (

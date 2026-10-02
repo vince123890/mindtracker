@@ -16,7 +16,7 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
   return (
     <div>
       <PageHeader title="Production Performance" subtitle={<span className="flex items-center gap-2">Target RKAP vs realisasi per Anggota Holding · <DummyBadge /></span>} />
-      <Card>
+      <Card source="mct.production">
         <form className="mb-3 flex flex-wrap gap-2 text-sm">
           {isMindId(user) ? (
             <select name="org" defaultValue={sp.org ?? ""} className="rounded border border-slate-300 px-2 py-1">

@@ -16,7 +16,7 @@ export default async function KeyParameterPage() {
   return (
     <div>
       <PageHeader title="Key Parameter Operasi" subtitle={<span className="flex items-center gap-2">Parameter vs target, deviasi · <DummyBadge /></span>} />
-      <Card title="Periode terakhir">
+      <Card title="Periode terakhir" source="mct.parameter">
         <table className="w-full">
           <thead><tr><th className={th}>AH</th><th className={th}>Plant</th><th className={th}>Parameter</th><th className={th}>Periode</th><th className={th}>Target</th><th className={th}>Aktual</th><th className={th}>Deviasi</th><th className={th}>Status</th></tr></thead>
           <tbody>

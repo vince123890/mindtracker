@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { HeatmapLegend, LevelBadge, PrismaSetupNotice, RiskDetailTable, RiskHeatmap, RiskHistoryChart, TopRiskList } from "@/components/risk";
-import { btnGhost, Card, DummyBadge, Empty, input, PageHeader, td, th } from "@/components/ui";
+import { btnGhost, Card, SourceNote, DummyBadge, Empty, input, PageHeader, td, th } from "@/components/ui";
 import { requirePermission } from "@/lib/auth/session";
 import { listRiskHistory, listRisks, prismaAvailable, sumHistory, type PrismaRisk } from "@/lib/db/prisma";
 import { listProjects } from "@/lib/db/tracker";
@@ -91,27 +91,28 @@ export default async function PrismaRiskPage({ searchParams }: { searchParams: P
           </div>
         ))}
       </div>
+      <SourceNote source="prisma.aggregate" className="-mt-3" />
 
       {risks.length === 0 ? <Empty>Tidak ada risiko untuk filter ini.</Empty> : (
         <>
           <div className="grid gap-6 lg:grid-cols-12">
             <div className="space-y-6 lg:col-span-7">
-              <Card title="Risk Heatmap">
+              <Card title="Risk Heatmap" source="prisma.matrix">
                 <RiskHeatmap markers={markers} />
                 <HeatmapLegend />
                 <p className="mt-2 text-xs text-slate-500">Penanda hitam = jumlah risiko open pada sel tersebut (arahkan kursor untuk daftar risiko).</p>
               </Card>
-              <Card title="History">
+              <Card title="History" source="prisma.history">
                 <RiskHistoryChart rows={histRows} />
               </Card>
             </div>
-            <Card title="Top Risk" className="lg:col-span-5">
+            <Card title="Top Risk" className="lg:col-span-5" source="prisma.top">
               {top.length ? <TopRiskList risks={top} showProject /> : <Empty>Tidak ada risiko open.</Empty>}
             </Card>
           </div>
 
           {!sp.project ? (
-            <Card title="Risk Aggregate & Rating per Proyek">
+            <Card title="Risk Aggregate & Rating per Proyek" source="prisma.aggregate">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[760px]">
                   <thead>
@@ -151,7 +152,7 @@ export default async function PrismaRiskPage({ searchParams }: { searchParams: P
             </Card>
           ) : null}
 
-          <Card title="Detail Risk">
+          <Card title="Detail Risk" source="prisma.detail">
             <RiskDetailTable risks={[...risks].sort((a, b) => severity(b) - severity(a))} showProject={!sp.project} />
           </Card>
         </>

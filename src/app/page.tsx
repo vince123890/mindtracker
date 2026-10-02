@@ -280,7 +280,7 @@ export default async function Dashboard() {
           </Card>
         ) : null}
         {show("production") ? (
-          <Card title={<span className="flex items-center gap-2">Kinerja produksi (6 bulan) <DummyBadge /></span>}>
+          <Card title={<span className="flex items-center gap-2">Kinerja produksi (6 bulan) <DummyBadge /></span>} source="mct.production">
             <BarChart threshold={1} rows={[...new Set(production.map((x) => `${x.organization_id} · ${x.product}`))].map((key) => {
               const rows = production.filter((x) => `${x.organization_id} · ${x.product}` === key);
               const t = rows.reduce((a, r) => a + r.target, 0);

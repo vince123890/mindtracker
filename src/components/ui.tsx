@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Icon } from "./icons";
+import { SOURCES, type SourceKey } from "@/lib/sources";
 import { GATE_LABEL, pct } from "@/lib/format";
 import type { PhaseIndices, ScoringConfig } from "@/lib/scoring/types";
 
@@ -34,7 +35,20 @@ export function PageHeader({
   );
 }
 
-export function Card({ title, children, className = "", actions }: { title?: ReactNode; children: ReactNode; className?: string; actions?: ReactNode }) {
+export function Card({
+  title,
+  children,
+  className = "",
+  actions,
+  source,
+}: {
+  title?: ReactNode;
+  children: ReactNode;
+  className?: string;
+  actions?: ReactNode;
+  /** Catatan sumber data integrasi, tampil kecil di bawah isi kartu. */
+  source?: SourceKey | SourceKey[];
+}) {
   return (
     <section className={`rounded-card border border-line bg-card p-5 shadow-sm md:p-6 ${className}`}>
       {title || actions ? (
@@ -44,7 +58,38 @@ export function Card({ title, children, className = "", actions }: { title?: Rea
         </div>
       ) : null}
       {children}
+      {source ? <SourceNote source={source} className="mt-4" /> : null}
     </section>
+  );
+}
+
+/** Catatan kecil "Sumber: SISTEM · dataset — field" untuk data yang berasal dari integrasi. */
+export function SourceNote({ source, className = "", compact = false }: { source: SourceKey | SourceKey[]; className?: string; compact?: boolean }) {
+  const keys = Array.isArray(source) ? source : [source];
+  if (compact) {
+    // Versi ringkas untuk kartu KPI: sistem & dataset saja, field lengkap di tooltip
+    return (
+      <div className={`flex items-center gap-1 text-[11px] text-slate-500 ${className}`} title={keys.map((k) => `${SOURCES[k].system} · ${SOURCES[k].dataset} — ${SOURCES[k].fields}`).join("\n")}>
+        <Icon name="Database" className="h-3 w-3 shrink-0 text-slate-400" />
+        Sumber: {keys.map((k) => `${SOURCES[k].system} · ${SOURCES[k].dataset}`).join(" + ")}
+      </div>
+    );
+  }
+  return (
+    <div className={`space-y-1 border-t border-dashed border-line pt-2 text-xs text-slate-500 ${className}`}>
+      {keys.map((k) => {
+        const s = SOURCES[k];
+        return (
+          <div key={k} className="flex items-start gap-1.5">
+            <Icon name="Database" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+            <span>
+              {"derived" in s && s.derived ? "Dihitung dari " : "Sumber: "}
+              <b className="font-semibold text-slate-700">{s.system}</b> · {s.dataset} — {s.fields}
+            </span>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

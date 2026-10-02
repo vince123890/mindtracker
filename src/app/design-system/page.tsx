@@ -1,6 +1,6 @@
 import { HeatmapLegend, LevelBadge, RiskDetailTable, RiskHeatmap, RiskHistoryChart, TopRiskList } from "@/components/risk";
 import { Icon } from "@/components/icons";
-import { btn, btnDanger, btnGhost, Card, DummyBadge, GateBadge, input, PageHeader, ReqBadge, Tabs, td, th } from "@/components/ui";
+import { btn, btnDanger, btnGhost, Card, DummyBadge, GateBadge, input, PageHeader, ReqBadge, SourceNote, Tabs, td, th } from "@/components/ui";
 import type { PrismaRisk } from "@/lib/db/prisma";
 import type { RiskLevel } from "@/lib/risk/matrix";
 
@@ -135,6 +135,17 @@ export default function DesignSystemPage() {
         </div>
       </Section>
 
+      <Section title="Catatan sumber data integrasi">
+        <p className="text-sm text-slate-600">
+          Setiap blok yang datanya berasal dari sistem lain wajib memberi catatan kecil di bawah isinya: sistem, dataset, dan field yang dipakai.
+          Teks diambil dari satu daftar (<code>src/lib/sources.ts</code>); kartu cukup memberi <code>source=&quot;…&quot;</code>.
+          Kartu KPI memakai versi ringkas (field lengkap di tooltip). Angka yang dihitung MIND Tracker dari data sumber diawali &quot;Dihitung dari&quot;.
+        </p>
+        <SourceNote source="prisma.matrix" />
+        <SourceNote source="prisma.aggregate" />
+        <SourceNote compact source="mindgate.document" />
+      </Section>
+
       <Section title="Tabel">
         <table className="w-full">
           <thead><tr><th className={th}>Risk ID</th><th className={th}>Taksonomi</th><th className={th}>Deskripsi</th></tr></thead>
@@ -148,15 +159,15 @@ export default function DesignSystemPage() {
       <div className="text-lg font-semibold text-slate-900">Pola: Risk PRISMA (data contoh)</div>
       <div className="grid gap-6 lg:grid-cols-12">
         <div className="space-y-6 lg:col-span-7">
-          <Card title="Risk Heatmap">
+          <Card title="Risk Heatmap" source="prisma.matrix">
             <RiskHeatmap markers={SAMPLE.filter((r) => r.status === "OPEN").map((r) => ({ label: String(r.top_rank), likelihood: r.likelihood, impact: r.impact, title: r.title }))} />
             <HeatmapLegend />
           </Card>
-          <Card title="History"><RiskHistoryChart rows={HISTORY} /></Card>
+          <Card title="History" source="prisma.history"><RiskHistoryChart rows={HISTORY} /></Card>
         </div>
-        <Card title="Top Risk" className="lg:col-span-5"><TopRiskList risks={SAMPLE} /></Card>
+        <Card title="Top Risk" className="lg:col-span-5" source="prisma.top"><TopRiskList risks={SAMPLE} /></Card>
       </div>
-      <Card title="Detail Risk"><RiskDetailTable risks={SAMPLE} /></Card>
+      <Card title="Detail Risk" source="prisma.detail"><RiskDetailTable risks={SAMPLE} /></Card>
     </div>
   );
 }

@@ -33,7 +33,7 @@ export default async function StrategyPage() {
         title="Downstream Strategy & Simulation"
         subtitle={<span className="flex items-center gap-2">Menampilkan output aplikasi simulasi eksternal — sistem tidak menjalankan simulasi · <DummyBadge /></span>}
       />
-      <Card title="Perbandingan skenario">
+      <Card title="Perbandingan skenario" source="simulation.strategy">
         <table className="w-full">
           <thead><tr><th className={th}>Parameter</th>{scenarios.map((s) => <th key={s.code} className={th}>{s.code} · {s.name}</th>)}</tr></thead>
           <tbody>
